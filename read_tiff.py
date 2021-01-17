@@ -11,15 +11,13 @@ im = np.array(im)
 
 images = sim_func.create_images(im)
 small_im = images[1]
-small_im_rotated = ndimage.rotate(small_im, 45)
+#small_im_rotated = ndimage.rotate(small_im, 45)
 big_im = images[0]
+
 
 plt.figure(1)
 plt.imshow(small_im)
 plt.figure(2)
-plt.imshow(small_im_rotated)
-#plt.show()
-plt.figure(3)
 plt.imshow(big_im)
 plt.show()
 
