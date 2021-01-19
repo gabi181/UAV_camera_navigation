@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import imutils
-img1 = cv.imread('Figure_2_rotated.png',cv.IMREAD_GRAYSCALE)
+#img1 = cv.imread('Figure_2_rotated.png',cv.IMREAD_GRAYSCALE)
 
 def rotated_rect(w, h, angle):
     """
@@ -54,8 +54,8 @@ def rotate(img, angle):
     img = cv.resize(img,(w,h),interpolation=cv.INTER_AREA)
     return img
     #rotation angle in degree
-rotated = rotate(img1, 140)
+#rotated = rotate(img1, 160)
 
 
-plt.imshow(rotated),plt.show()
+#plt.imshow(rotated),plt.show()
 

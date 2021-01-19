@@ -5,25 +5,29 @@ import tifffile
 from sim_func import *
 from scipy import ndimage
 from pathlib import Path
+import rotate_image
+import matching
 
 p = Path('.')
-raster_path = p.resolve().parent / 'data' / 'ecw1.tif'
+#raster_path = p.resolve().parent / 'data' / 'ecw1.tif'
+raster_path_elyakim = "wetransfer-e55797/ecw1.tif"
 
-im = tifffile.imread(raster_path)[:][:][1:]
+im = tifffile.imread(raster_path_elyakim)[:][:][1:]
 im = np.array(im)
 #%%
 road_im = return_road_image(im)
 images = create_images(road_im)
-small_im = images[1]
-#small_im_rotated = ndimage.rotate(small_im, 45)
-big_im = images[0]
 
+small_im = rotate_image.rotate(images[1],30)
+med_im = images[0]
+
+matching.match_with_sift(med_im,small_im)
 
 plt.figure(1)
 plt.imshow(small_im)
 plt.figure(2)
-plt.imshow(big_im)
+plt.imshow(med_im)
 plt.show()
-
+#print('hi')
 #%%
 
