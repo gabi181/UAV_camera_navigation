@@ -18,9 +18,11 @@ def match_with_sift(med_im,small_im):
     matches = bf.knnMatch(des1,des2,k=2)
     # Apply ratio test
     good = []
+    i=0
     for m,n in matches:
         if m.distance < 0.75*n.distance:
             good.append([m])
+        i+=1
     # cv.drawMatchesKnn expects list of lists as matches.
     img3 = cv.drawMatchesKnn(small_im,kp1,med_im,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     plt.figure(1)
@@ -29,13 +31,13 @@ def match_with_sift(med_im,small_im):
     x = 0
     y = 0
     for m in good:
-        x += kp2[m[0].trainIdx].pt[0]
-        y += kp2[m[0].trainIdx].pt[1]
+        x += kp2[m[0].trainIdx].pt[1]
+        y += kp2[m[0].trainIdx].pt[0]
     x = int(round( x / len(good) ))
     y = int(round( y / len(good) ))
 
     matched_cor = [x,y]
-    match_im = med_im[x-100:x+100,y-100:y+100]
+    match_im = med_im[x-200:x+200,y-200:y+200]
 
     plt.figure(2)
     plt.imshow(match_im)

@@ -18,10 +18,12 @@ im = np.array(im)
 road_im = return_road_image(im)
 images = create_images(road_im)
 
-small_im = rotate_image.rotate(images[1],30)
+small_im = rotate_image.rotate(images[1],0)
 med_im = images[0]
 
-matching.match_with_sift(med_im,small_im)
+match_cors = matching.match_with_sift(med_im,small_im)
+print('mached cordinates are:',[match_cors[0]+images[2][0]-200,match_cors[1]+images[2][1]-200])
+print('original cordinates are:',images[3])
 
 plt.figure(1)
 plt.imshow(small_im)
