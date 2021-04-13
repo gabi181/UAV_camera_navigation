@@ -12,8 +12,8 @@ def create_images(im):
     x_cor_small = random.randint(x_cor_med,x_cor_med+med_im_width)
     y_cor_small = random.randint(y_cor_med,y_cor_med+med_im_height)
 
-    med_im = im[x_cor_med:x_cor_med+med_im_width,y_cor_med:y_cor_med+med_im_height,:]
-    small_im = im[x_cor_small:x_cor_small+small_im_width,y_cor_small:y_cor_small+small_im_height,:]
+    med_im = im[x_cor_med:x_cor_med+med_im_width,y_cor_med:y_cor_med+med_im_height]
+    small_im = im[x_cor_small:x_cor_small+small_im_width,y_cor_small:y_cor_small+small_im_height]
     med_im_cor = [x_cor_med,y_cor_med]
     small_im_cor = [x_cor_small,y_cor_small]
     return [med_im,small_im,med_im_cor,small_im_cor]

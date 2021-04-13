@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 # Initiate SIFT detector
 
 def match_with_sift(med_im,small_im):
-    med_im = cv.cvtColor(med_im, cv.COLOR_BGR2GRAY)
+    #med_im = cv.cvtColor(med_im, cv.COLOR_BGR2GRAY)
     med_im = cv.normalize(med_im, None, 0, 255, cv.NORM_MINMAX).astype('uint8')
-    small_im = cv.cvtColor(small_im, cv.COLOR_BGR2GRAY)
+    #small_im = cv.cvtColor(small_im, cv.COLOR_BGR2GRAY)
     small_im = cv.normalize(small_im, None, 0, 255, cv.NORM_MINMAX).astype('uint8')
     sift = cv.xfeatures2d.SIFT_create()
     # find the keypoints and descriptors with SIFT
@@ -30,6 +30,9 @@ def match_with_sift(med_im,small_im):
 
     x = 0
     y = 0
+    if len(good) == 0:
+        return [False,False]
+
     for m in good:
         x += kp2[m[0].trainIdx].pt[1]
         y += kp2[m[0].trainIdx].pt[0]
@@ -44,5 +47,4 @@ def match_with_sift(med_im,small_im):
     plt.show()
 
     return matched_cor
-
 
