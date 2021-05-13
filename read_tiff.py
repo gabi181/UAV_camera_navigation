@@ -18,6 +18,9 @@ im = tifffile.imread(raster_path_2020)[:][:][1:]
 im = np.array(im)
 im_18 = tifffile.imread(raster_path_2018)[:][:][1:]
 im_18 = np.array(im_18)
+plt.figure(3)
+plt.imshow(im)
+plt.show()
 #%%
 road_im = return_road_image(im)
 road_im_18 = return_road_image(im_18)

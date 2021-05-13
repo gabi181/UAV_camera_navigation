@@ -4,149 +4,84 @@ from skimage.feature import hog
 import  numpy as np
 import random
 import rotate_image
-
-road_2020 = cv.imread('road_2020.png')          # queryImage
-road_2018 = cv.imread('road_2018.png')          # queryImage
+import tifffile
+import sim_func
+import func_for_pf_alg
 
 #configurations:
-same_year = 0
+same_year = 1
+road_alg = 0
 hog_alg = 0
-hist_alg = 1
-mean_hist = 1
+hist_alg = 0
+ulman_alg = 0
+mean_hist = 0
+max_color_alg = 0
+max_span = 5
 grey_alg = 0
 thresh_alg = 0
-blur_image = 1
-rotate_im = 1
+blur_image = 0
+rotate_im = 0
 step_size = 15
-hist_col = 20
-window_size = 280
-image_size = 120
+hist_col = 30
+hist_list_len = 50
+window_size = 600
+image_size = 200
 
-if (hog_alg):
-    fd, hog_road_2020 = hog(road_2020, orientations=12, pixels_per_cell=(8, 8),
-                        cells_per_block=(8, 8), visualize=True, multichannel=True)
-    road_2020 = np.array(hog_road_2020)
-    fd, hog_road_2018 = hog(road_2018, orientations=12, pixels_per_cell=(8, 8),
-                        cells_per_block=(8, 8), visualize=True, multichannel=True)
-    road_2018 = np.array(hog_road_2018)
-elif (grey_alg):
-    road_2020 = cv.cvtColor(road_2020, cv.COLOR_BGR2GRAY)
-    road_2018 = cv.cvtColor(road_2018, cv.COLOR_BGR2GRAY)
-    if (thresh_alg):
-        road_2020[road_2020>127] = 255
-        road_2020[road_2020<=127] = 0
-        road_2018[road_2018>127] = 255
-        road_2018[road_2018<=127] = 0
+# generate large image
+road_2020_large,road_2018_large = func_for_pf_alg.generate_large_image(road_alg=road_alg,ulman_alg=ulman_alg,same_year=same_year)
 
-if(blur_image):
-    kernel = np.ones((10, 10), np.float32) / 100
-    road_2020 = cv.filter2D(road_2020, -1, kernel)
-    road_2018 = cv.filter2D(road_2018, -1, kernel)
+road_2020 = 0
+road_2018 = 0
+for nn in range(1):
+   # generate mid image
+   road_2020,road_2018 = func_for_pf_alg.generate_mid_image(road_2018_large,road_2020_large,window_size,window_size,road_alg=road_alg,blur_image=blur_image,ulman_alg=ulman_alg)
 
+   # generate small image
+   image,x_orig,y_orig = func_for_pf_alg.generate_uvm_image(road_2020, image_size, image_size, rotate_im, road_alg=road_alg,ulman_alg=ulman_alg)
 
-#creat UVM image:
-y_orig = random.randint(500,1400)
-x_orig = random.randint(400,500)
-if (same_year):
-    road_2020[:] = road_2018[:]
-image = road_2018[x_orig:x_orig + image_size, y_orig:y_orig + image_size]
-if (rotate_im):
-    ang = random.randint(10,60)
-    print(ang)
-    image = rotate_image.rotate(image,ang)
-x_list = np.zeros(10)
-y_list = np.zeros(10)
-dist_list = np.zeros(10)
-x_min = 0
-y_min = 0
-dist_min = 1000000000000000
-for num in range(len(dist_list)):
-    dist_list[num] = dist_min
+   #plt.figure(3)
+   #plt.imshow(image)
+   #plt.show()
+   # clculate diff function
+   x_min,y_min,diff_mat = func_for_pf_alg.calc_im_diff(image,road_2018,step_size,hist_alg,hist_col,hist_list_len,max_color_alg=max_color_alg,max_span=max_span,hog_alg=hog_alg,mean_hist=mean_hist)
 
+   print(x_min,y_min)
+   print(x_orig,y_orig)
+   print(x_min-x_orig)
+   print(y_min-y_orig)
 
-if (hist_alg):
-    image_r = np.histogram(image[:,:,0],hist_col)
-    image_g = np.histogram(image[:,:,1],hist_col)
-    image_b = np.histogram(image[:,:,2],hist_col)
-    mean_r = np.mean(image_r[0])
-    mean_g = np.mean(image_g[0])
-    mean_b = np.mean(image_b[0])
-    image_hist = [image_r[0],image_g[0],image_b[0]]
-for i in range(x_orig-window_size,x_orig+window_size,step_size):
-    for j in range(y_orig-window_size,y_orig+window_size,step_size):
-        image_to_compare = road_2018[i:i+image_size,j:j+image_size]
-        if (hist_alg):
-            image_to_compare_r = np.histogram(image_to_compare[:, :, 0],hist_col)
-            image_to_compare_g = np.histogram(image_to_compare[:, :, 1],hist_col)
-            image_to_compare_b = np.histogram(image_to_compare[:, :, 2],hist_col)
-            mean_r_to_compere =np.mean(image_to_compare_r[0])
-            mean_g_to_compere =np.mean(image_to_compare_g[0])
-            mean_b_to_compere =np.mean(image_to_compare_b[0])
-            if (mean_hist):
-                image_to_compare_r = image_to_compare_r - mean_r_to_compere + mean_r
-                image_to_compare_g = image_to_compare_g - mean_g_to_compere + mean_g
-                image_to_compare_b = image_to_compare_b - mean_b_to_compere + mean_b
-            image_to_compare_hist = [image_to_compare_r[0], image_to_compare_g[0], image_to_compare_b[0]]
-            dist = (np.sum((image_hist[0]-image_to_compare_hist[0])**2)+np.sum((image_hist[1]-image_to_compare_hist[1])**2)+np.sum((image_hist[2]-image_to_compare_hist[2])**2))/(3*image_size**2*256)
-            if (dist<dist_min):
-                x_list[np.argmax(dist_list)] = int(i)
-                y_list[np.argmax(dist_list)] = int(j)
-                dist_list[np.argmax(dist_list)] = dist
-                dist_min = np.max(dist_list)
-        else:
-            dist = (np.sum((image-image_to_compare)**2))#/(image_size**2*256)
-            if (dist < dist_min):
-                dist_min = dist
-                x_min = i
-                y_min = j
-i = 0
-j = 0
-print(x_list)
-print(y_list)
-print(dist_list)
-if (hist_alg):
-    dist_min = 10000000000000000
-    for ind in range(len(x_list)):
-        i = int(x_list[ind])
-        j = int(y_list[ind])
-        image_to_compare = road_2018[i:i+image_size,j:j+image_size]
-        dist = (np.sum((image - image_to_compare) ** 2)) / (image_size ** 2 * 256)
-        if(dist < dist_min):
-            dist_min = dist
-            x_min = i
-            y_min = j
+   #show images:
+   #road_2018[x_orig:x_orig+5,y_orig:y_orig+image_size,0] = 255
+   #road_2018[x_orig+image_size:x_orig+image_size+5,y_orig:y_orig+image_size,0] = 255
+   #road_2018[x_orig:x_orig+image_size,y_orig:y_orig+5,0] = 255
+   #road_2018[x_orig:x_orig+image_size,y_orig+image_size:y_orig+image_size+5,0] = 255
+   #road_2020[x_min:x_min+5,y_min:y_min+image_size,0] = 255
+   #road_2020[x_min+image_size:x_min+image_size+5,y_min:y_min+image_size,0] = 255
+   #road_2020[x_min:x_min+image_size,y_min:y_min+5,0] = 255
+   #road_2020[x_min:x_min+image_size,y_min+image_size:y_min+image_size+5,0] = 255
+   #road_2018[x_orig-window_size:x_orig-window_size+5,y_orig-window_size:y_orig+window_size+image_size,1] = 255
+   #road_2018[x_orig+window_size+image_size:x_orig+window_size+image_size+5,y_orig-window_size:y_orig+window_size+image_size,1] = 255
+   #road_2018[x_orig-window_size:x_orig+window_size+image_size,y_orig-window_size:y_orig-window_size+5,1] = 255
+   #road_2018[x_orig-window_size:x_orig+window_size+image_size,y_orig+window_size+image_size:y_orig+window_size+image_size+5,1] = 255
+   #road_2020[x_min-window_size:x_min-window_size+5,y_min-window_size:y_min+window_size+image_size,1] = 255
+   #road_2020[x_min+window_size+image_size:x_min+window_size+image_size+5,y_min-window_size:y_min+window_size+image_size,1] = 255
+   #road_2020[x_min-window_size:x_min+window_size+image_size,y_min-window_size:y_min-window_size+5,1] = 255
+   #road_2020[x_min-window_size:x_min+window_size+image_size,y_min+window_size+image_size:y_min+window_size+image_size+5,1] = 255
+   orig_im = func_for_pf_alg.generate_im_to_show(road_2018,x_orig,y_orig,image_size,image_size)
+   predict_im = func_for_pf_alg.generate_im_to_show(road_2020, x_min, y_min, image_size, image_size)
 
-if (not same_year):
-    x_min = x_min+35
-    y_min = y_min+50
+   #plt.figure(nn)
+   plt.subplot(2,1,1)
+   plt.imshow(orig_im)
+   plt.subplot(2,1,2)
+   plt.imshow(predict_im)
+   #plt.subplot(3,1,3)
+   #if(ulman_alg==0):
+   #    plt.figure(2*nn+1)
+   #    plt.matshow(diff_mat)
+   #plt.figure(3)
+   #plt.imshow(road_2020)
 
-print(x_min,y_min)
-print(x_orig,y_orig)
-print(x_min-x_orig)
-print(y_min-y_orig)
+   plt.show()
+   plt.clf()
 
-#show images:
-road_2018[x_orig:x_orig+5,y_orig:y_orig+image_size,0] = 255
-road_2018[x_orig+image_size:x_orig+image_size+5,y_orig:y_orig+image_size,0] = 255
-road_2018[x_orig:x_orig+image_size,y_orig:y_orig+5,0] = 255
-road_2018[x_orig:x_orig+image_size,y_orig+image_size:y_orig+image_size+5,0] = 255
-road_2020[x_min:x_min+5,y_min:y_min+image_size,0] = 255
-road_2020[x_min+image_size:x_min+image_size+5,y_min:y_min+image_size,0] = 255
-road_2020[x_min:x_min+image_size,y_min:y_min+5,0] = 255
-road_2020[x_min:x_min+image_size,y_min+image_size:y_min+image_size+5,0] = 255
-road_2018[x_orig-window_size:x_orig-window_size+5,y_orig-window_size:y_orig+window_size+image_size,1] = 255
-road_2018[x_orig+window_size+image_size:x_orig+window_size+image_size+5,y_orig-window_size:y_orig+window_size+image_size,1] = 255
-road_2018[x_orig-window_size:x_orig+window_size+image_size,y_orig-window_size:y_orig-window_size+5,1] = 255
-road_2018[x_orig-window_size:x_orig+window_size+image_size,y_orig+window_size+image_size:y_orig+window_size+image_size+5,1] = 255
-road_2020[x_min-window_size:x_min-window_size+5,y_min-window_size:y_min+window_size+image_size,1] = 255
-road_2020[x_min+window_size+image_size:x_min+window_size+image_size+5,y_min-window_size:y_min+window_size+image_size,1] = 255
-road_2020[x_min-window_size:x_min+window_size+image_size,y_min-window_size:y_min-window_size+5,1] = 255
-road_2020[x_min-window_size:x_min+window_size+image_size,y_min+window_size+image_size:y_min+window_size+image_size+5,1] = 255
-plt.figure(1)
-plt.subplot(2,1,1)
-plt.imshow(road_2018)
-plt.subplot(2,1,2)
-plt.imshow(road_2020)
-#plt.figure(3)
-#plt.imshow(road_2020)
-plt.show()
