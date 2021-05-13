@@ -21,7 +21,7 @@ grey_alg = 0
 thresh_alg = 0
 blur_image = 0
 rotate_im = 0
-step_size = 15
+step_size = 5
 hist_col = 30
 hist_list_len = 50
 window_size = 600
@@ -84,4 +84,6 @@ for nn in range(1):
 
    plt.show()
    plt.clf()
+
+
 
