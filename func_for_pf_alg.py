@@ -240,6 +240,6 @@ def estimate_curr_uvm_cor(uvm_image_cor,mid_image_cor,large_image):
     uvm_image = large_image[uvm_image_cor[0]-int(uvm_image_size/2) : uvm_image_cor[0]+int(uvm_image_size/2) , uvm_image_cor[1]-int(uvm_image_size/2) : uvm_image_cor[1]+int(uvm_image_size/2)]
     curr_x, curr_y, diff_mat = calc_im_diff(uvm_image, mid_image, step_size, hist_alg=0, hist_col=1,hist_list_len=1, max_color_alg=0,max_span=0, hog_alg=0, mean_hist=0)
     curr_y = curr_y+ int(mid_image_size/2) + int(uvm_image_size/2)
-    estimated_curr_uvm_cor = [curr_x,curr_y]
+    estimated_curr_uvm_cor = (curr_x,curr_y)
     return estimated_curr_uvm_cor
 
