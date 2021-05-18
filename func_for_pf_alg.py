@@ -227,10 +227,6 @@ def generate_im_to_show(mid_im,x_cor,y_cor,image_len,image_witdh):
     mid_im[x_cor:x_cor + image_len, y_cor + image_witdh:y_cor + image_witdh + 5, 0] = 255
     return mid_im
 
-
-
-
-
 def estimate_curr_uav_cor(uav_image_cor,mid_image_cor,large_image):
     # configurations:
     step_size = 12
