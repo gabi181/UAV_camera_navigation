@@ -32,6 +32,9 @@ image_size = 200
 # generate large image
 road_2020_large,road_2018_large = func_for_pf_alg.generate_large_image(road_alg=road_alg,ulman_alg=ulman_alg,same_year=same_year)
 
+#uav_image = road_2020_large[6100:6300,6100:6400,:]
+#est_pts = func_for_pf_alg.estimate_curr_uav_cor(uav_image,[6000,6000],road_2020_large)
+#print(est_pts)
 road_2020 = 0
 road_2018 = 0
 for nn in range(1):
