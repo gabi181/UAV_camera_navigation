@@ -7,13 +7,15 @@ import rotate_image
 import tifffile
 import sim_func
 import func_for_pf_alg
+import matplotlib.colors as cls
 
 #configurations:
-same_year = 1
+same_year = 0
 road_alg = 0
 hog_alg = 0
 hist_alg = 0
 ulman_alg = 0
+hsv_alg = 0
 mean_hist = 0
 max_color_alg = 0
 max_span = 5
@@ -43,6 +45,11 @@ for nn in range(1):
    #plt.imshow(image)
    #plt.show()
    # clculate diff function
+   if(hsv_alg):
+      image = cls.rgb_to_hsv(image[:,:,0:3])
+      road_2018 = cls.rgb_to_hsv(road_2018[:,:,0:3])
+      image[:,:,0]=1
+      road_2018[:, :, 0] = 1
    x_min,y_min,diff_mat = func_for_pf_alg.calc_im_diff(image,road_2018,step_size,hist_alg,hist_col,hist_list_len,max_color_alg=max_color_alg,max_span=max_span,hog_alg=hog_alg,mean_hist=mean_hist)
 
    print(x_min,y_min)

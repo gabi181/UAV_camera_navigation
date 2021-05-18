@@ -1,11 +1,13 @@
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as cls
 from skimage.feature import hog
 
 hist_exp =0
 grey_exp =0
-hog_exp =1
+hog_exp =0
+hsv_exp =1
 blur_image = 0
 
 image_new = np.array(cv.imread('exp_new.png'))  # queryImage
@@ -31,6 +33,7 @@ image_old_hog = image_old_hog[1::2,1::2]
 
 image_new_hog = (image_new_hog>(np.mean(image_new_hog)+5))
 image_old_hog = (image_old_hog>(np.mean(image_old_hog)+5))
+
 
 if (blur_image):
     kernel = np.ones((3, 3), np.float32) / 9
@@ -63,4 +66,22 @@ if (hog_exp):
     plt.imshow(image_new_hog)
     plt.figure(2)
     plt.imshow(image_old_hog)
+
+
+if (hsv_exp):
+    image_new_hsv = cls.rgb_to_hsv(image_new)
+    image_old_hsv = cls.rgb_to_hsv(image_old)
+    print(image_new_hsv[:, :, 0])
+    hist_r_new, bin_r_new = np.histogram(image_new_hsv[:, :, 0], 10)
+    hist_r_old, bin_r_old = np.histogram(image_old_hsv[:, :, 0], 10)
+
+    plt.figure(1)
+    plt.bar(bin_r_new[:-1], hist_r_new, width=15)
+    # plt.hist(hist_r_new[0])
+    plt.figure(2)
+    plt.bar(bin_r_old[:-1], hist_r_old, width=15)
+    #plt.figure(3)
+    #plt.bar(bin_r_old_mean[:-1], hist_r_old_mean, width=15)
+    #plt.figure(4)
+    #plt.imshow(image_new_grey)
 plt.show()

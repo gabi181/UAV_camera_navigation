@@ -3,7 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import copy
 import math
-from func_for_pf_alg import estimate_curr_uvm_cor
+from func_for_pf_alg import estimate_curr_uav_cor
 #%%
 p = Path('.')
 q = p.resolve().parent / 'data' / 'simple_data'
@@ -46,7 +46,7 @@ cv2.destroyAllWindows()
 cv2.namedWindow('paths', cv2.WINDOW_NORMAL)
 est_pts = []
 for pts in true_points:
-    est_pts.append(estimate_curr_uvm_cor(pts, pts, images[0]))
+    est_pts.append(estimate_curr_uav_cor(pts, pts, images[0]))
     cv2.circle(tmp_image, center=est_pts[-1], radius=3, color=(0, 255, 0), thickness=-1)
 
 while True:
