@@ -1,9 +1,12 @@
 from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 import copy
 import math
 from func_for_pf_alg import estimate_curr_uav_cor
+#%% parameters
+uav_image_size = (80, 80)
 #%%
 p = Path('.')
 q = p.resolve().parent / 'data' / 'simple_data'
@@ -14,7 +17,7 @@ fig, axes = plt.subplots(im_num, 1, figsize=(200,30))
 images = []
 for i,f in enumerate(q.iterdir()):
     if f.is_file():
-        images.append(plt.imread(f))
+        images.append(cv2.imread(str(f)))
         axes[i].imshow(images[i])
         axes[i].set_xticks([])
         axes[i].set_yticks([])
@@ -24,7 +27,7 @@ for i,f in enumerate(q.iterdir()):
 # stores mouse position in global variables ix(for x coordinate) and iy(for y coordinate)
 # on double click inside the image
 def select_point(event,x,y,flags,param):
-    if event == cv2.EVENT_LBUTTONDBLCLK: # captures left button double-click
+    if event == cv2.EVENT_LBUTTONDBLCLK:  # captures left button double-click
         true_points.append((x, y))
         cv2.circle(tmp_image, center=true_points[-1], radius=3, color=(0, 0, 255), thickness=-1)
 
@@ -41,12 +44,14 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 cv2.destroyAllWindows()
+true_points = [(sub[1], sub[0]) for sub in true_points]
 #%%
 # Use the Algorithm to calculate estimated Drone location.
 cv2.namedWindow('paths', cv2.WINDOW_NORMAL)
 est_pts = []
 for pts in true_points:
-    est_pts.append(estimate_curr_uav_cor(pts, pts, images[0]))
+    uav_image = images[0][pts[0]-int(uav_image_size[0]/2) : pts[0]+int(uav_image_size[0]/2) , pts[1]-int(uav_image_size[1]/2) : pts[1]+int(uav_image_size[1]/2)]
+    est_pts.append(estimate_curr_uav_cor(uav_image, pts, images[0]))
     cv2.circle(tmp_image, center=est_pts[-1], radius=3, color=(0, 255, 0), thickness=-1)
 
 while True:
