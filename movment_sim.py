@@ -52,7 +52,10 @@ est_pts = []
 for pts in true_points:
     uav_image = images[0][pts[0]-int(uav_image_size[0]/2) : pts[0]+int(uav_image_size[0]/2) , pts[1]-int(uav_image_size[1]/2) : pts[1]+int(uav_image_size[1]/2)]
     est_pts.append(estimate_curr_uav_cor(uav_image, pts, images[0]))
-    cv2.circle(tmp_image, center=est_pts[-1], radius=3, color=(0, 255, 0), thickness=-1)
+
+est_pts = [(b, a) for a, b in est_pts]
+for pts in est_pts:
+    cv2.circle(tmp_image, center=pts, radius=3, color=(0, 255, 0), thickness=-1)
 
 while True:
     cv2.imshow('paths', tmp_image)
@@ -63,7 +66,7 @@ cv2.destroyAllWindows()
 
 #%%
 def calc_distance(p1, p2):
-    return math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)  # Pythagorean theorem
+    return math.sqrt((p1[1]-p2[0])**2+(p1[0]-p2[1])**2)  # Pythagorean theorem
 
 
 #%% Statistics
