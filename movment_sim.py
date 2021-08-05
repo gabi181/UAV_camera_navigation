@@ -38,10 +38,11 @@ true_points = np.array([[436,  886], [444, 1018], [447, 1114], [447, 1215], [436
 #%%
 # Use the Algorithm to calculate estimated Drone location.
 #est_pts = []
-est_pts = np.zeros(true_points.shape)
-for i, pts in enumerate(true_points):
-    uav_image = images[0][pts[0]-int(uav_image_size[0]/2): pts[0]+int(uav_image_size[0]/2), pts[1]-int(uav_image_size[1]/2): pts[1]+int(uav_image_size[1]/2)]
-    est_pts[i] = calc_uav_cor(uav_image=uav_image, prev_cor=pts, large_image=images[0])
+est_pts = np.zeros(true_points.shape).astype(int)
+est_pts[0] = true_points[0]  # First location is given
+for i in range(1,len(true_points)):
+    uav_image = images[0][true_points[i,0]-int(uav_image_size[0]/2): true_points[i,0]+int(uav_image_size[0]/2), true_points[i,1]-int(uav_image_size[1]/2): true_points[i,1]+int(uav_image_size[1]/2)]
+    est_pts[i] = calc_uav_cor(uav_image=uav_image, prev_cor=est_pts[i-1], large_image=images[0])
 
 
 #%%
