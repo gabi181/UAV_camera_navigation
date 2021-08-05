@@ -7,7 +7,27 @@ import rotate_image
 import matplotlib.pyplot as plt
 from skimage.feature import hog
 
-def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_list_len=1, same_year=0,mean_hist=1,max_color_alg=0,max_span=5,hog_alg=0):
+def upperleft2center(upperleft_cor, im_shape):
+    """
+    :param upperleft_cor: Expects to get row-column coordinates. not x-y.
+    :param im_shape: im.shape
+    :return: center row-column coordinates.
+    """
+    center_cor = np.array([round(upperleft_cor[0] + im_shape[0]/2), round(upperleft_cor[1] + im_shape[1]/2)])
+    return center_cor
+
+
+def center2upperleft(center_cor, im_shape):
+    """
+    :param upperleft_cor: Expects to get row-column coordinates. not x-y.
+    :param im_shape: im.shape
+    :return: upper-left row-column coordinates.
+    """
+    upperleft_cor = np.array([round(center_cor[0] - im_shape[0]/2), round(center_cor[1] - im_shape[1]/2)])
+    return upperleft_cor
+
+
+def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_list_len=1, mean_hist=1,max_color_alg=0,max_span=5,hog_alg=0):
     image_len = len(image)
     image_width = len(image[0])
     mid_image_len = len(mid_image)
@@ -227,17 +247,66 @@ def generate_im_to_show(mid_im,x_cor,y_cor,image_len,image_witdh):
     mid_im[x_cor:x_cor + image_len, y_cor + image_witdh:y_cor + image_witdh + 5, 0] = 255
     return mid_im
 
-def estimate_curr_uav_cor(uav_image,mid_image_cor,large_image):
+def match_with_sift(med_im,small_im):
+    """
+    :param med_im: Image of the searching area.
+    :param small_im: Image observed by the uav.
+    :return: Coordinates of the UAV in mid image coordinates system.
+    """
+    med_im = cv.normalize(med_im, None, 0, 255, cv.NORM_MINMAX).astype('uint8')
+    small_im = cv.normalize(small_im, None, 0, 255, cv.NORM_MINMAX).astype('uint8')
+    sift = cv.xfeatures2d.SIFT_create()
+    # find the keypoints and descriptors with SIFT
+    kp1, des1 = sift.detectAndCompute(small_im,None)
+    kp2, des2 = sift.detectAndCompute(med_im,None)
+    # BFMatcher with default params
+    bf = cv.BFMatcher()
+    matches = bf.knnMatch(des1,des2,k=2)
+    # store all the good matches as per Lowe's ratio test.
+    good = []
+    for m,n in matches:
+        if m.distance < 0.75*n.distance:
+            good.append(m)
+    """
+    For debug:
+    cv.drawMatchesKnn expects list of lists as matches.
+    good_list = [[i] for i in good]
+    img3 = cv.drawMatchesKnn(small_im,kp1,med_im,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    plt.figure(1)
+    plt.imshow(img3)
+    """
+    if len(good) == 0:
+        return [False,False]
+
+    src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+    dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+    H, inliers = cv.estimateAffine2D(src_pts, dst_pts, method=cv.RANSAC)
+    # TODO: I think we should get only translation. So maybe we should check if the 2x2 matrix is close to identity.
+    uav_cor = upperleft2center((H[1,2], H[0,2]), small_im.shape)
+    return uav_cor
+
+
+def calc_uav_cor(uav_image, prev_cor, large_image):
+    """
+    This is the user function. Wraps the main algorithm.
+    :param uav_image: The input from the UAV camera.
+    :param prev_cor:  Previous coordinates to reduce the search area.
+    :param large_image: The data base. TODO: maybe we should consider reading the data base in the function.
+                                             And think about how to handel the data base (keeping all of it in memory
+                                             might be impossible)
+    :return: Estimated current coordinates.
+    """
     # configurations:
     step_size = 12
-    uav_image_size_x, uav_image_size_y, _ = uav_image.shape
-    mid_image_size_x = uav_image_size_x * 3
-    mid_image_size_y = uav_image_size_y * 4
-    mid_image = large_image[mid_image_cor[0]-int(mid_image_size_x/2) : mid_image_cor[0]+int(mid_image_size_x/2) , mid_image_cor[1]-int(mid_image_size_y/2) : mid_image_cor[1]+int(mid_image_size_y/2)]
-    #uav_image = large_image[uav_image_cor[0]-int(uav_image_size_x/2) : uav_image_cor[0]+int(uav_image_size_x/2) , uav_image_cor[1]-int(uav_image_size_y/2) : uav_image_cor[1]+int(uav_image_size_y/2)]
-    curr_x, curr_y, diff_mat = calc_im_diff(uav_image, mid_image, step_size, hist_alg=0, hist_col=1,hist_list_len=1, max_color_alg=0,max_span=0, hog_alg=0, mean_hist=0)
-    curr_y = curr_y - int(mid_image_size_y/2) + int(uav_image_size_y/2) + mid_image_cor[1]
-    curr_x = curr_x - int(mid_image_size_x/2) + int(uav_image_size_x/2) + mid_image_cor[0]
-    estimated_curr_uav_cor = [curr_x,curr_y]
-    return estimated_curr_uav_cor
+    mid_image_shape = uav_image.shape[0]*3, uav_image.shape[1]*3
+    mid_image = large_image[prev_cor[0]-int(mid_image_shape[0]/2) : prev_cor[0]+int(mid_image_shape[0]/2) , prev_cor[1]-int(mid_image_shape[1]/2) : prev_cor[1]+int(mid_image_shape[1]/2)]
+    # curr_x, curr_y, diff_mat = calc_im_diff(uav_image, mid_image, step_size, hist_alg=0, hist_col=1,hist_list_len=1, max_color_alg=0,max_span=0, hog_alg=0, mean_hist=0)
+    est_mid_cor = match_with_sift(mid_image, uav_image)
+    upperleft_prev_cor = center2upperleft(prev_cor, mid_image_shape)
+    est_large_cor = upperleft_prev_cor + est_mid_cor
+    #est_cor = (est_cor[0] - int(mid_image_shape[0]/2) + int(mid_image_shape[0]/2) + prev_cor[0], est_cor[1] - int(mid_image_shape[1]/2) + int(mid_image_shape[1]/2) + prev_cor[1])
+    #curr_y = curr_y - int(mid_image_size_y/2) + int(uav_image_size_y/2) + prev_cor[1]
+    #curr_x = curr_x - int(mid_image_size_x/2) + int(uav_image_size_x/2) + prev_cor[0]
+    #estimated_curr_uav_cor = [curr_x,curr_y]
+    return est_large_cor
 

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
-from func_for_pf_alg import estimate_curr_uav_cor
+from func_for_pf_alg import calc_uav_cor
 #%% parameters
 uav_image_size = (80, 80)
 #%%
@@ -41,7 +41,7 @@ true_points = np.array([[436,  886], [444, 1018], [447, 1114], [447, 1215], [436
 est_pts = np.zeros(true_points.shape)
 for i, pts in enumerate(true_points):
     uav_image = images[0][pts[0]-int(uav_image_size[0]/2): pts[0]+int(uav_image_size[0]/2), pts[1]-int(uav_image_size[1]/2): pts[1]+int(uav_image_size[1]/2)]
-    est_pts[i] = estimate_curr_uav_cor(uav_image, pts, images[0])
+    est_pts[i] = calc_uav_cor(uav_image=uav_image, prev_cor=pts, large_image=images[0])
 
 
 #%%
