@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
-from func_for_pf_alg import calc_uav_cor
+import algorithm_functions
 #%% parameters
 uav_image_size = (80, 80)
 #%%
@@ -41,8 +41,8 @@ true_points = np.array([[436,  886], [444, 1018], [447, 1114], [447, 1215], [436
 est_pts = np.zeros(true_points.shape).astype(int)
 est_pts[0] = true_points[0]  # First location is given
 for i in range(1,len(true_points)):
-    uav_image = images[0][true_points[i,0]-int(uav_image_size[0]/2): true_points[i,0]+int(uav_image_size[0]/2), true_points[i,1]-int(uav_image_size[1]/2): true_points[i,1]+int(uav_image_size[1]/2)]
-    est_pts[i] = calc_uav_cor(uav_image=uav_image, prev_cor=est_pts[i-1], large_image=images[0])
+    uav_image = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
+    est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image, prev_cor=est_pts[i-1], large_image=images[0])
 
 
 #%%

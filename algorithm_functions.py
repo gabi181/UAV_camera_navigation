@@ -1,9 +1,5 @@
 import numpy as np
 import cv2 as cv
-import tifffile
-import sim_func
-import random
-import rotate_image
 import matplotlib.pyplot as plt
 from skimage.feature import hog
 
@@ -25,6 +21,16 @@ def center2upperleft(center_cor, im_shape):
     """
     upperleft_cor = np.array([round(center_cor[0] - im_shape[0]/2), round(center_cor[1] - im_shape[1]/2)])
     return upperleft_cor
+
+def center2im(center_cor, image, im_shape):
+    """
+    :param center_cor: Row-column center coordinates.
+    :param im_shape:
+    :return:
+    """
+    im = image[center_cor[0]-int(im_shape[0]/2): center_cor[0]+int(im_shape[0]/2),
+               center_cor[1]-int(im_shape[1]/2): center_cor[1]+int(im_shape[1]/2)]
+    return im
 
 
 def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_list_len=1, mean_hist=1,max_color_alg=0,max_span=5,hog_alg=0):
@@ -158,94 +164,7 @@ def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_l
 
     return x_min, y_min, diff_mat
 
-def generate_large_image(road_alg=0,ulman_alg=0,same_year=0):
-    if (road_alg):
-        image_2020 = cv.imread('road_2020.png')          # queryImage
-        image_2018 = cv.imread('road_2018.png')          # queryImage
-    elif(ulman_alg):
-        image_2020 = cv.imread('ulman_mid_im.png')          # queryImage
-        image_2018 = cv.imread('ulman_mid_im.png')          # queryImage
-    else:
-        raster_path_2020 = "wetransfer-e55797 2020/ecw1.tif"
-        if (same_year):
-            raster_path_2018 = "wetransfer-e55797 2020/ecw1.tif"
-        else:
-            raster_path_2018 = "wetransfer-8334c6 2018/TechnionOrtho20181.tif"
-        im = tifffile.imread(raster_path_2020)[:][:][1:]
-        image_2020 = np.array(im)
-        im_18 = tifffile.imread(raster_path_2018)[:][:][1:]
-        image_2018 = np.array(im_18)
-    return image_2018,image_2020
 
-def generate_mid_image(image_2018_large,image_2020_large,mid_image_len,mid_image_width,road_alg=0,blur_image=1,thresh_alg=0,ulman_alg=0):
-
-        #plt.figure(5)
-        #plt.imshow(im_18)
-        #plt.show()
-        #plt.figure(6)
-        #plt.imshow(im)
-        #plt.show()
-        if(road_alg | ulman_alg):
-            image_2020 = image_2020_large
-            image_2018 = image_2018_large
-        else:
-            images = sim_func.create_images(image_2020_large,image_2018_large,mid_image_len,mid_image_width)
-            image_2020 = images[0]
-            image_2018 = images[2]
-
-        if(blur_image):
-            kernel = np.ones((10, 10), np.float32) / 100
-            image_2020 = cv.filter2D(image_2020, -1, kernel)
-            image_2018 = cv.filter2D(image_2018, -1, kernel)
-        if (thresh_alg):
-            median_2018 = np.median(image_2018)
-            median_2020 = np.median(image_2020)
-
-        return image_2020,image_2018
-    #if (hog_alg):
-    #    fd, hog_road_2020 = hog(road_2020, orientations=12, pixels_per_cell=(8, 8),
-    #                        cells_per_block=(8, 8), visualize=True, multichannel=True)
-    #    road_2020 = np.array(hog_road_2020)
-    #    fd, hog_road_2018 = hog(road_2018, orientations=12, pixels_per_cell=(8, 8),
-    #                        cells_per_block=(8, 8), visualize=True, multichannel=True)
-    #    road_2018 = np.array(hog_road_2018)
-    #elif (grey_alg):
-    #    road_2020 = cv.cvtColor(road_2020, cv.COLOR_BGR2GRAY)
-    #    road_2018 = cv.cvtColor(road_2018, cv.COLOR_BGR2GRAY)
-    #    if (thresh_alg):
-    #        road_2020[road_2020>127] = 255
-    #        road_2020[road_2020<=127] = 0
-    #        road_2018[road_2018>127] = 255
-    #        road_2018[road_2018<=127] = 0
-
-
-def generate_uvm_image(mid_image,image_len,image_width,rotate_im=1,road_alg=0,ulman_alg=0):
-
-    #creat UVM image:
-     if (road_alg):
-        y_orig = random.randint(500,1400)
-        x_orig = random.randint(400,500)
-     else:
-        y_orig = random.randint(0,len(mid_image)-image_len)
-        x_orig = random.randint(0,len(mid_image[0])-image_width)
-
-
-     image = mid_image[x_orig:x_orig + image_len, y_orig:y_orig + image_width]
-     if(ulman_alg):
-         image = cv.imread('ulman_small_im_1.jpeg')  # queryImage
-         #image = cv.resize(image, dsize=(image_len, image_width), interpolation=cv.INTER_CUBIC)
-     if (rotate_im):
-        ang = random.randint(10,60)
-        print("angle of rotate is:"+str(ang))
-        image = rotate_image.rotate(image,ang)
-     return image,x_orig,y_orig
-
-def generate_im_to_show(mid_im,x_cor,y_cor,image_len,image_witdh):
-    mid_im[x_cor:x_cor + 5, y_cor:y_cor + image_witdh, 0] = 255
-    mid_im[x_cor + image_len:x_cor + image_len + 5, y_cor:y_cor + image_witdh, 0] = 255
-    mid_im[x_cor:x_cor + image_len, y_cor:y_cor + 5, 0] = 255
-    mid_im[x_cor:x_cor + image_len, y_cor + image_witdh:y_cor + image_witdh + 5, 0] = 255
-    return mid_im
 
 def match_with_sift(med_im,small_im):
     """
@@ -276,13 +195,14 @@ def match_with_sift(med_im,small_im):
     plt.imshow(img3)
     """
     if len(good) == 0:
-        return [False,False]
+        return [False, False]
 
     src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
     H, inliers = cv.estimateAffine2D(src_pts, dst_pts, method=cv.RANSAC)
     # TODO: I think we should get only translation. So maybe we should check if the 2x2 matrix is close to identity.
-    uav_cor = upperleft2center((H[1,2], H[0,2]), small_im.shape)
+    # np.linalg.norm(H[:, [0, 1]] - np.identity(2))
+    uav_cor = upperleft2center((H[1, 2], H[0, 2]), small_im.shape)
     return uav_cor
 
 
@@ -296,17 +216,10 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
                                              might be impossible)
     :return: Estimated current coordinates.
     """
-    # configurations:
-    step_size = 12
     mid_image_shape = uav_image.shape[0]*3, uav_image.shape[1]*3
-    mid_image = large_image[prev_cor[0]-int(mid_image_shape[0]/2) : prev_cor[0]+int(mid_image_shape[0]/2) , prev_cor[1]-int(mid_image_shape[1]/2) : prev_cor[1]+int(mid_image_shape[1]/2)]
-    # curr_x, curr_y, diff_mat = calc_im_diff(uav_image, mid_image, step_size, hist_alg=0, hist_col=1,hist_list_len=1, max_color_alg=0,max_span=0, hog_alg=0, mean_hist=0)
+    mid_image = center2im(prev_cor, large_image, mid_image_shape)
     est_mid_cor = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image_shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
-    #est_cor = (est_cor[0] - int(mid_image_shape[0]/2) + int(mid_image_shape[0]/2) + prev_cor[0], est_cor[1] - int(mid_image_shape[1]/2) + int(mid_image_shape[1]/2) + prev_cor[1])
-    #curr_y = curr_y - int(mid_image_size_y/2) + int(uav_image_size_y/2) + prev_cor[1]
-    #curr_x = curr_x - int(mid_image_size_x/2) + int(uav_image_size_x/2) + prev_cor[0]
-    #estimated_curr_uav_cor = [curr_x,curr_y]
     return est_large_cor
 
