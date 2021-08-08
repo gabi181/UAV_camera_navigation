@@ -2,6 +2,8 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 from skimage.feature import hog
+import random
+import rotate_image
 
 def upperleft2center(upperleft_cor, im_shape):
     """
@@ -24,10 +26,11 @@ def center2upperleft(center_cor, im_shape):
     upperleft_cor = np.array([upperleft_row,upperleft_col])
     return upperleft_cor
 
-def center2im(center_cor, image, im_shape):
+def center2im(center_cor, image, im_shape, cfg_rand_rotate=1):
     """
     :param center_cor: Row-column center coordinates.
     :param im_shape:
+    :param cgf_rand_rotate: if ==1 - rotates image in random angle between 0 to 5
     :return:
     """
     up_row = np.maximum(center_cor[0] - int(im_shape[0]/2), 0)
@@ -36,6 +39,9 @@ def center2im(center_cor, image, im_shape):
     right_col = np.minimum(center_cor[1] + int(im_shape[1] / 2), image.shape[1])
 
     im = image[up_row: down_row, left_col: right_col]
+    if(cfg_rand_rotate):
+        angle = random.randint(0,5)
+        im = rotate_image.rotate(im,angle)
     return im
 
 
@@ -238,9 +244,13 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
     # algorithm hyper parameters:
     mid_ratio = 3
 
-    mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio)
+    mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio, 0)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image.shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
+
+    # Edge cases:
+    if ((est_mid_cor[0][0]>mid_image_shape[0]) or (est_mid_cor[0][1]>mid_image_shape[1])):
+        raise ValueError('Estimated point is outside of mid_image.')
     return est_large_cor
 
