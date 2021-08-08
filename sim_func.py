@@ -4,6 +4,7 @@ import tifffile
 import random
 import rotate_image
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def create_images(im,im_18,med_im_width = 1000, med_im_height = 1000):
@@ -54,17 +55,22 @@ def return_road_image(im):
 
 def generate_large_image(road_alg=0,ulman_alg=0,same_year=0):
     if (road_alg):
-        image_2020 = cv.imread('road_2020.png')          # queryImage
-        image_2018 = cv.imread('road_2018.png')          # queryImage
+        image_2020 = cv.imread('project_drone/road_2020.png')          # queryImage
+        image_2018 = cv.imread('project_drone/road_2018.png')          # queryImage
+        plt.figure(0)
+        plt.imshow(image_2020)
+        plt.figure(1)
+        plt.imshow(image_2018)
+        plt.show()
     elif(ulman_alg):
         image_2020 = cv.imread('ulman_mid_im.png')          # queryImage
         image_2018 = cv.imread('ulman_mid_im.png')          # queryImage
     else:
-        raster_path_2020 = "wetransfer-e55797 2020/ecw1.tif"
+        raster_path_2020 = "project_drone/wetransfer-e55797 2020/ecw1.tif"
         if (same_year):
-            raster_path_2018 = "wetransfer-e55797 2020/ecw1.tif"
+            raster_path_2018 = "project_drone/wetransfer-e55797 2020/ecw1.tif"
         else:
-            raster_path_2018 = "wetransfer-8334c6 2018/TechnionOrtho20181.tif"
+            raster_path_2018 = "project_drone/wetransfer-8334c6 2018/TechnionOrtho20181.tif"
         im = tifffile.imread(raster_path_2020)[:][:][1:]
         image_2020 = np.array(im)
         im_18 = tifffile.imread(raster_path_2018)[:][:][1:]
