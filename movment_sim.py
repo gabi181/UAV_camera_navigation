@@ -33,16 +33,30 @@ def getPoints(im, N):
 # Let the user draw points.
 N = 5
 # true_points = getPoints(images[0], N)
-true_points = np.array([[436,  886], [444, 1018], [447, 1114], [447, 1215], [436, 1320]])
+true_points = np.array([[137, 560], [149, 694], [154, 820], [154, 906], [143, 1004]])  # [R, C]
+
+
+hetro_true_points = np.concatenate((np.flip(true_points).T, np.ones((1,len(true_points)), int)))  # [x, y, 1].T
+# H: right -> left
+_, H = algorithm_functions.match_with_sift(images[1], images[0])
+true_points_prime = np.round(np.flip((H @ hetro_true_points).T)).astype(int)  # [R, C]
+"""
+fig, ax = plt.subplots(2, 1)
+ax[0].imshow(images[0])
+ax[1].imshow(images[1])
+ax[0].scatter(true_points[:,1], true_points[:,0], marker=".", color="red", s=50)
+ax[1].scatter(true_points_prime[:,1], true_points_prime[:,0], marker=".", color="red", s=50)
+"""
 
 #%%
 # Use the Algorithm to calculate estimated Drone location.
-#est_pts = []
 est_pts = np.zeros(true_points.shape).astype(int)
 est_pts[0] = true_points[0]  # First location is given
 for i in range(1,len(true_points)):
-    uav_image = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
-    est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image, prev_cor=est_pts[i-1], large_image=images[0])
+    # TODO: do not extract uav image from database.
+    # uav_image2020 = algorithm_functions.center2im(true_points_prime[i], images[1], uav_image_size)
+    uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
+    est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image2018, prev_cor=est_pts[i-1], large_image=images[0])
 
 
 #%%

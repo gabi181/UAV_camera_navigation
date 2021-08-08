@@ -170,7 +170,8 @@ def match_with_sift(med_im,small_im):
     """
     :param med_im: Image of the searching area.
     :param small_im: Image observed by the uav.
-    :return: Coordinates of the UAV in mid image coordinates system.
+    :return: uav_cor: Coordinates of the UAV in mid image coordinates system.
+             H: Affine transformation from small_im to mid_im. x-y coordinates.
     """
     med_im = cv.normalize(med_im, None, 0, 255, cv.NORM_MINMAX).astype('uint8')
     small_im = cv.normalize(small_im, None, 0, 255, cv.NORM_MINMAX).astype('uint8')
@@ -190,8 +191,8 @@ def match_with_sift(med_im,small_im):
     For debug:
     cv.drawMatchesKnn expects list of lists as matches.
     good_list = [[i] for i in good]
-    img3 = cv.drawMatchesKnn(small_im,kp1,med_im,kp2,good,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    plt.figure(1)
+    img3 = cv.drawMatchesKnn(small_im,kp1,med_im,kp2,good_list,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    plt.figure()
     plt.imshow(img3)
     """
     if len(good) == 0:
@@ -201,9 +202,23 @@ def match_with_sift(med_im,small_im):
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
     H, inliers = cv.estimateAffine2D(src_pts, dst_pts, method=cv.RANSAC)
     # TODO: I think we should get only translation. So maybe we should check if the 2x2 matrix is close to identity.
+    #       im not sure this assumption is true. maybe only affine transformation can explain the differeneces.
     # np.linalg.norm(H[:, [0, 1]] - np.identity(2))
-    uav_cor = upperleft2center((H[1, 2], H[0, 2]), small_im.shape)
-    return uav_cor
+    # TODO: check if u need affine transormation, and if u do - use it to return the uav coordinate it.
+    p = np.concatenate((np.flip(np.round(np.array([small_im.shape[0:2]])/2).astype(int)).T, np.ones((1, 1), int)))
+    uav_cor = np.round(np.flip((H @ p).T)).astype(int)
+    """
+    fig, ax = plt.subplots(2, 1)
+    ax[0].imshow(med_im)
+    ax[1].imshow(small_im)
+    p = np.array([[858], [134]])
+    A = H[:,[0,1]]
+    b = H[:,[2]]
+    p_prime = np.round(A @ p + b).astype(int)
+    ax[1].scatter(p[0], p[1], marker=".", color="red", s=50)
+    ax[0].scatter(p_prime[0], p_prime[1], marker=".", color="red", s=50) 
+    """
+    return uav_cor, H
 
 
 def calc_uav_cor(uav_image, prev_cor, large_image):
@@ -217,8 +232,9 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
     :return: Estimated current coordinates.
     """
     mid_image_shape = uav_image.shape[0]*3, uav_image.shape[1]*3
+    # TODO: extract the mid image from data base
     mid_image = center2im(prev_cor, large_image, mid_image_shape)
-    est_mid_cor = match_with_sift(mid_image, uav_image)
+    est_mid_cor, _ = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image_shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
     return est_large_cor
