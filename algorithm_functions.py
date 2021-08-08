@@ -250,7 +250,7 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
     est_large_cor = upperleft_prev_cor + est_mid_cor
 
     # Edge cases:
-    if ((est_mid_cor[0][0]>mid_image_shape[0]) or (est_mid_cor[0][1]>mid_image_shape[1])):
+    if ((est_mid_cor[0][0]>mid_image.shape[0]) or (est_mid_cor[0][1]>mid_image.shape[1])):
         raise ValueError('Estimated point is outside of mid_image.')
     return est_large_cor
 
