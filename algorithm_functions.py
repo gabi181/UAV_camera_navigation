@@ -1,9 +1,5 @@
 import numpy as np
 import cv2 as cv
-import tifffile
-import sim_func
-import random
-import rotate_image
 import matplotlib.pyplot as plt
 from skimage.feature import hog
 
@@ -25,6 +21,16 @@ def center2upperleft(center_cor, im_shape):
     """
     upperleft_cor = np.array([round(center_cor[0] - im_shape[0]/2), round(center_cor[1] - im_shape[1]/2)])
     return upperleft_cor
+
+def center2im(center_cor, image, im_shape):
+    """
+    :param center_cor: Row-column center coordinates.
+    :param im_shape:
+    :return:
+    """
+    im = image[center_cor[0]-int(im_shape[0]/2): center_cor[0]+int(im_shape[0]/2),
+               center_cor[1]-int(im_shape[1]/2): center_cor[1]+int(im_shape[1]/2)]
+    return im
 
 
 def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_list_len=1, mean_hist=1,max_color_alg=0,max_span=5,hog_alg=0):
@@ -158,6 +164,7 @@ def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_l
 
     return x_min, y_min, diff_mat
 
+<<<<<<< HEAD:func_for_pf_alg.py
 def generate_large_image(road_alg=0,ulman_alg=0,same_year=0):
     if (road_alg):
         image_2020 = cv.imread('project_drone/road_2020.png')          # queryImage
@@ -244,13 +251,9 @@ def generate_uvm_image(mid_image,image_len,image_width,rotate_im=1,road_alg=0,ul
         print("angle of rotate is:"+str(ang))
         image = rotate_image.rotate(image,ang)
      return image,x_orig,y_orig
+=======
+>>>>>>> 23d409d81bdc7982f425e70de99fda8ccd9b97b9:algorithm_functions.py
 
-def generate_im_to_show(mid_im,x_cor,y_cor,image_len,image_witdh):
-    mid_im[x_cor:x_cor + 5, y_cor:y_cor + image_witdh, 0] = 255
-    mid_im[x_cor + image_len:x_cor + image_len + 5, y_cor:y_cor + image_witdh, 0] = 255
-    mid_im[x_cor:x_cor + image_len, y_cor:y_cor + 5, 0] = 255
-    mid_im[x_cor:x_cor + image_len, y_cor + image_witdh:y_cor + image_witdh + 5, 0] = 255
-    return mid_im
 
 def match_with_sift(med_im,small_im):
     """
@@ -281,13 +284,14 @@ def match_with_sift(med_im,small_im):
     plt.imshow(img3)
     """
     if len(good) == 0:
-        return [False,False]
+        return [False, False]
 
     src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
     H, inliers = cv.estimateAffine2D(src_pts, dst_pts, method=cv.RANSAC)
     # TODO: I think we should get only translation. So maybe we should check if the 2x2 matrix is close to identity.
-    uav_cor = upperleft2center((H[1,2], H[0,2]), small_im.shape)
+    # np.linalg.norm(H[:, [0, 1]] - np.identity(2))
+    uav_cor = upperleft2center((H[1, 2], H[0, 2]), small_im.shape)
     return uav_cor
 
 
@@ -301,18 +305,11 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
                                              might be impossible)
     :return: Estimated current coordinates.
     """
-    # configurations:
-    step_size = 12
     mid_image_shape = uav_image.shape[0]*3, uav_image.shape[1]*3
-    mid_image = large_image[prev_cor[0]-int(mid_image_shape[0]/2) : prev_cor[0]+int(mid_image_shape[0]/2) , prev_cor[1]-int(mid_image_shape[1]/2) : prev_cor[1]+int(mid_image_shape[1]/2)]
-    # curr_x, curr_y, diff_mat = calc_im_diff(uav_image, mid_image, step_size, hist_alg=0, hist_col=1,hist_list_len=1, max_color_alg=0,max_span=0, hog_alg=0, mean_hist=0)
+    mid_image = center2im(prev_cor, large_image, mid_image_shape)
     est_mid_cor = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image_shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
-    #est_cor = (est_cor[0] - int(mid_image_shape[0]/2) + int(mid_image_shape[0]/2) + prev_cor[0], est_cor[1] - int(mid_image_shape[1]/2) + int(mid_image_shape[1]/2) + prev_cor[1])
-    #curr_y = curr_y - int(mid_image_size_y/2) + int(uav_image_size_y/2) + prev_cor[1]
-    #curr_x = curr_x - int(mid_image_size_x/2) + int(uav_image_size_x/2) + prev_cor[0]
-    #estimated_curr_uav_cor = [curr_x,curr_y]
     return est_large_cor
 
 def affinic_from_2020_to_2018(point_2020):
