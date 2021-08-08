@@ -5,8 +5,13 @@ import numpy as np
 import copy
 import math
 import algorithm_functions
+import change_resolution
+
 #%% parameters
-uav_image_size = (80, 80)
+
+resize_ratio = 1
+uav_image_size = (int(200/resize_ratio), int(200/resize_ratio))
+
 #%%
 p = Path('.')
 q = p.resolve().parent / 'data' / 'simple_data'
@@ -14,9 +19,11 @@ q = p.resolve().parent / 'data' / 'simple_data'
 im_num = sum([True for f in q.iterdir() if f.is_file()])
 
 images = []
-for i,f in enumerate(q.iterdir()):
+for f in q.iterdir():
     if f.is_file():
         images.append(plt.imread(f))
+for i, im in enumerate(images):
+    images[i] = change_resolution.change_resolution(im, resize_ratio)
 
 
 #%%
@@ -33,10 +40,10 @@ def getPoints(im, N):
 # Let the user draw points.
 N = 5
 # true_points = getPoints(images[0], N)
-true_points = np.array([[137, 560], [149, 694], [154, 820], [154, 906], [143, 1004]])  # [R, C]
+true_points = np.array([[152, 878], [153, 887], [153, 899], [150, 907], [147, 918]])  # [R, C]. Resize_ratio = 1.
+# true_points = np.array([[85, 390], [85, 382], [85, 374], [85, 367], [85, 359]])  # [R, C]. Resize_ratio = 2.
 
-
-hetro_true_points = np.concatenate((np.flip(true_points).T, np.ones((1,len(true_points)), int)))  # [x, y, 1].T
+hetro_true_points = np.concatenate((np.flip(true_points).T, np.ones((1, len(true_points)), int)))  # [x, y, 1].T
 # H: right -> left
 _, H = algorithm_functions.match_with_sift(images[1], images[0])
 true_points_prime = np.round(np.flip((H @ hetro_true_points).T)).astype(int)  # [R, C]
@@ -54,9 +61,9 @@ est_pts = np.zeros(true_points.shape).astype(int)
 est_pts[0] = true_points[0]  # First location is given
 for i in range(1,len(true_points)):
     # TODO: do not extract uav image from database.
-    # uav_image2020 = algorithm_functions.center2im(true_points_prime[i], images[1], uav_image_size)
-    uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
-    est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image2018, prev_cor=est_pts[i-1], large_image=images[0])
+    uav_image2020 = algorithm_functions.center2im(true_points_prime[i], images[1], uav_image_size)
+    # uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
+    est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image2020, prev_cor=est_pts[i-1], large_image=images[0])
 
 
 #%%

@@ -10,10 +10,10 @@ from skimage import feature
 def change_resolution(image,resize_value):
     resize_len = resize_value
     resize_width = resize_value
-    image_len = len(image[0,:])
-    image_width = len(image[:,0])
+    image_len = len(image[0, :])
+    image_width = len(image[:, 0])
     size = int(image_len/resize_len) , int(image_width/resize_width)
-    image_resized = cv.resize(image,size)
+    image_resized = cv.resize(image, size)
     return image_resized
 
 def add_noise(image):

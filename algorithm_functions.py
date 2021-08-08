@@ -19,7 +19,9 @@ def center2upperleft(center_cor, im_shape):
     :param im_shape: im.shape
     :return: upper-left row-column coordinates.
     """
-    upperleft_cor = np.array([round(center_cor[0] - im_shape[0]/2), round(center_cor[1] - im_shape[1]/2)])
+    upperleft_row = np.maximum(round(center_cor[0] - im_shape[0]/2), 0)
+    upperleft_col = np.maximum(round(center_cor[1] - im_shape[1] / 2), 0)
+    upperleft_cor = np.array([upperleft_row,upperleft_col])
     return upperleft_cor
 
 def center2im(center_cor, image, im_shape):
@@ -28,8 +30,12 @@ def center2im(center_cor, image, im_shape):
     :param im_shape:
     :return:
     """
-    im = image[center_cor[0]-int(im_shape[0]/2): center_cor[0]+int(im_shape[0]/2),
-               center_cor[1]-int(im_shape[1]/2): center_cor[1]+int(im_shape[1]/2)]
+    up_row = np.maximum(center_cor[0] - int(im_shape[0]/2), 0)
+    down_row = np.minimum(center_cor[0]+int(im_shape[0]/2), image.shape[0])
+    left_col = np.maximum(center_cor[1] - int(im_shape[1]/2), 0)
+    right_col = np.minimum(center_cor[1] + int(im_shape[1] / 2), image.shape[1])
+
+    im = image[up_row: down_row, left_col: right_col]
     return im
 
 
@@ -200,10 +206,7 @@ def match_with_sift(med_im,small_im):
     src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
     H, inliers = cv.estimateAffine2D(src_pts, dst_pts, method=cv.RANSAC)
-    # TODO: I think we should get only translation. So maybe we should check if the 2x2 matrix is close to identity.
-    #       im not sure this assumption is true. maybe only affine transformation can explain the differeneces.
     # np.linalg.norm(H[:, [0, 1]] - np.identity(2))
-    # TODO: check if u need affine transormation, and if u do - use it to return the uav coordinate it.
     p = np.concatenate((np.flip(np.round(np.array([small_im.shape[0:2]])/2).astype(int)).T, np.ones((1, 1), int)))
     uav_cor = np.round(np.flip((H @ p).T)).astype(int)
     """
@@ -230,11 +233,14 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
                                              might be impossible)
     :return: Estimated current coordinates.
     """
-    mid_image_shape = uav_image.shape[0]*3, uav_image.shape[1]*3
-    # TODO: extract the mid image from data base
-    mid_image = center2im(prev_cor, large_image, mid_image_shape)
+    # TODO: maybe resize ratio should be algorithm parameter not simulation parameter.
+    #       if so, we should think how to avoid computing the decimation each time.
+    # algorithm hyper parameters:
+    mid_ratio = 3
+
+    mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
-    upperleft_prev_cor = center2upperleft(prev_cor, mid_image_shape)
+    upperleft_prev_cor = center2upperleft(prev_cor, mid_image.shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
     return est_large_cor
 
