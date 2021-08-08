@@ -54,8 +54,6 @@ def rotate(img, angle):
     img = cv.resize(img,(w,h),interpolation=cv.INTER_AREA)
     return img
     #rotation angle in degree
-#rotated = rotate(img1, 160)
 
 
-#plt.imshow(rotated),plt.show()
 

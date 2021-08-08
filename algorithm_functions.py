@@ -2,6 +2,8 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 from skimage.feature import hog
+import random
+import rotate_image
 
 def upperleft2center(upperleft_cor, im_shape):
     """
@@ -22,14 +24,18 @@ def center2upperleft(center_cor, im_shape):
     upperleft_cor = np.array([round(center_cor[0] - im_shape[0]/2), round(center_cor[1] - im_shape[1]/2)])
     return upperleft_cor
 
-def center2im(center_cor, image, im_shape):
+def center2im(center_cor, image, im_shape, cfg_rand_rotate=1):
     """
     :param center_cor: Row-column center coordinates.
     :param im_shape:
+    :param cgf_rand_rotate: if ==1 - rotates image in random angle between 0 to 5
     :return:
     """
     im = image[center_cor[0]-int(im_shape[0]/2): center_cor[0]+int(im_shape[0]/2),
                center_cor[1]-int(im_shape[1]/2): center_cor[1]+int(im_shape[1]/2)]
+    if(cfg_rand_rotate):
+        angle = random.randint(0,5)
+        im = rotate_image.rotate(im,angle)
     return im
 
 
@@ -232,34 +238,13 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
     """
     mid_image_shape = uav_image.shape[0]*3, uav_image.shape[1]*3
     # TODO: extract the mid image from data base
-    mid_image = center2im(prev_cor, large_image, mid_image_shape)
+    mid_image = center2im(prev_cor, large_image, mid_image_shape,0)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image_shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
+
+    # Edge cases:
+    if ((est_mid_cor[0][0]>mid_image_shape[0]) or (est_mid_cor[0][1]>mid_image_shape[1])):
+        raise ValueError('Estimated point is outside of mid_image.')
     return est_large_cor
 
-def affinic_from_2020_to_2018(point_2020):
-    # calculted by fitting in matlab using:
-    # y_vec_2020 = [4524,5809,6149,7634,4409,7305,7513,2412,12043,14260,5315];
-    # x_vec_2020 = [4379,5584,6707,7253,7498,4766,2471,7318,14586,12409,8268];
-    # y_vec_2018 = [4471,5782,6145,7642,4423,7262,7421,2422,12203,14373,5344];
-    # x_vec_2018 = [4304,5481,6596,7111,7424,4631,2332,7285,14350,12127,8174];
-    point_2018 = [0,0]
-    point_2018[1] = int(-0.02099*point_2020[0] + 0.9998*point_2020[1] + 19.67)  # axis y in np array - x in showing image
-    point_2018[0] = int(0.9998*point_2020[0] + 0.02085*point_2020[1] + -142.1)  # axis x in np array - y in showing image
-
-    # for debug:
-    # raster_path_2020 = "wetransfer-e55797 2020/ecw1.tif"
-    # raster_path_2018 = "wetransfer-8334c6 2018/TechnionOrtho20181.tif"
-    # im = tifffile.imread(raster_path_2020)[:][:][1:]
-    # image_2020 = np.array(im)
-    # im_18 = tifffile.imread(raster_path_2018)[:][:][1:]
-    # image_2018 = np.array(im_18)
-    # point_2020 = [10200, 8200]
-    # point_2018 = convert_2020_to_2018(point_2020)
-    # plt.figure(0)
-    # plt.imshow(image_2020[point_2020[0]:point_2020[0] + 200, point_2020[1]:point_2020[1] + 200, :])
-    # plt.figure(1)
-    # plt.imshow(image_2018[point_2018[0]:point_2018[0] + 200, point_2018[1]:point_2018[1] + 200, :])
-    # plt.show()
-    return point_2018

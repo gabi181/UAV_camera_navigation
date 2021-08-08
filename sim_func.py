@@ -146,3 +146,29 @@ def generate_im_to_show(mid_im,x_cor,y_cor,image_len,image_witdh):
     mid_im[x_cor:x_cor + image_len, y_cor:y_cor + 5, 0] = 255
     mid_im[x_cor:x_cor + image_len, y_cor + image_witdh:y_cor + image_witdh + 5, 0] = 255
     return mid_im
+
+def affinic_from_2020_to_2018(point_2020):
+    # calculted by fitting in matlab using:
+    # y_vec_2020 = [4524,5809,6149,7634,4409,7305,7513,2412,12043,14260,5315];
+    # x_vec_2020 = [4379,5584,6707,7253,7498,4766,2471,7318,14586,12409,8268];
+    # y_vec_2018 = [4471,5782,6145,7642,4423,7262,7421,2422,12203,14373,5344];
+    # x_vec_2018 = [4304,5481,6596,7111,7424,4631,2332,7285,14350,12127,8174];
+    point_2018 = [0,0]
+    point_2018[1] = int(-0.02099*point_2020[0] + 0.9998*point_2020[1] + 19.67)  # axis y in np array - x in showing image
+    point_2018[0] = int(0.9998*point_2020[0] + 0.02085*point_2020[1] + -142.1)  # axis x in np array - y in showing image
+
+    # for debug:
+    # raster_path_2020 = "wetransfer-e55797 2020/ecw1.tif"
+    # raster_path_2018 = "wetransfer-8334c6 2018/TechnionOrtho20181.tif"
+    # im = tifffile.imread(raster_path_2020)[:][:][1:]
+    # image_2020 = np.array(im)
+    # im_18 = tifffile.imread(raster_path_2018)[:][:][1:]
+    # image_2018 = np.array(im_18)
+    # point_2020 = [10200, 8200]
+    # point_2018 = convert_2020_to_2018(point_2020)
+    # plt.figure(0)
+    # plt.imshow(image_2020[point_2020[0]:point_2020[0] + 200, point_2020[1]:point_2020[1] + 200, :])
+    # plt.figure(1)
+    # plt.imshow(image_2018[point_2018[0]:point_2018[0] + 200, point_2018[1]:point_2018[1] + 200, :])
+    # plt.show()
+    return point_2018

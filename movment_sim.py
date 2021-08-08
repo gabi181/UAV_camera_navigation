@@ -5,6 +5,9 @@ import numpy as np
 import copy
 import math
 import algorithm_functions
+
+#%% flags
+cfg_rand_rotate = 1
 #%% parameters
 uav_image_size = (80, 80)
 #%%
@@ -33,7 +36,7 @@ def getPoints(im, N):
 # Let the user draw points.
 N = 5
 # true_points = getPoints(images[0], N)
-true_points = np.array([[137, 560], [149, 694], [154, 820], [154, 906], [143, 1004]])  # [R, C]
+true_points = np.array([[ 154, 1171],[ 160, 1136],[ 166, 1091],[ 172, 1046],[ 178, 1010]])  # [R, C]
 
 
 hetro_true_points = np.concatenate((np.flip(true_points).T, np.ones((1,len(true_points)), int)))  # [x, y, 1].T
@@ -55,7 +58,7 @@ est_pts[0] = true_points[0]  # First location is given
 for i in range(1,len(true_points)):
     # TODO: do not extract uav image from database.
     # uav_image2020 = algorithm_functions.center2im(true_points_prime[i], images[1], uav_image_size)
-    uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
+    uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size, cfg_rand_rotate)
     est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image2018, prev_cor=est_pts[i-1], large_image=images[0])
 
 
