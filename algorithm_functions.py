@@ -26,7 +26,7 @@ def center2upperleft(center_cor, im_shape):
     upperleft_cor = np.array([upperleft_row,upperleft_col])
     return upperleft_cor
 
-def center2im(center_cor, image, im_shape, cfg_rand_rotate=1):
+def center2im(center_cor, image, im_shape):
     """
     :param center_cor: Row-column center coordinates.
     :param im_shape:
@@ -39,9 +39,7 @@ def center2im(center_cor, image, im_shape, cfg_rand_rotate=1):
     right_col = np.minimum(center_cor[1] + int(im_shape[1] / 2), image.shape[1])
 
     im = image[up_row: down_row, left_col: right_col]
-    if(cfg_rand_rotate):
-        angle = random.randint(0,5)
-        im = rotate_image.rotate(im,angle)
+
     return im
 
 
@@ -214,7 +212,7 @@ def match_with_sift(med_im,small_im):
     H, inliers = cv.estimateAffine2D(src_pts, dst_pts, method=cv.RANSAC)
     # np.linalg.norm(H[:, [0, 1]] - np.identity(2))
     p = np.concatenate((np.flip(np.round(np.array([small_im.shape[0:2]])/2).astype(int)).T, np.ones((1, 1), int)))
-    uav_cor = np.round(np.flip((H @ p).T)).astype(int)
+    uav_cor = np.round(np.flip((H @ p).T)).astype(int).squeeze()
     """
     fig, ax = plt.subplots(2, 1)
     ax[0].imshow(med_im)
@@ -244,13 +242,13 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
     # algorithm hyper parameters:
     mid_ratio = 3
 
-    mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio, 0)
+    mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image.shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
 
     # Edge cases:
-    if ((est_mid_cor[0][0]>mid_image.shape[0]) or (est_mid_cor[0][1]>mid_image.shape[1])):
-        raise ValueError('Estimated point is outside of mid_image.')
+    if ((est_mid_cor[0]>mid_image.shape[0]) or (est_mid_cor[1]>mid_image.shape[1])):
+        est_large_cor = prev_cor
     return est_large_cor
 
