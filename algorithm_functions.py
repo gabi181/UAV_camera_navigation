@@ -227,7 +227,7 @@ def match_with_sift(med_im,small_im):
     return uav_cor, H
 
 
-def calc_uav_cor(uav_image, prev_cor, large_image):
+def calc_uav_cor(uav_image, prev_cor, large_image, mid_ratio):
     """
     This is the user function. Wraps the main algorithm.
     :param uav_image: The input from the UAV camera.
@@ -240,7 +240,6 @@ def calc_uav_cor(uav_image, prev_cor, large_image):
     # TODO: maybe resize ratio should be algorithm parameter not simulation parameter.
     #       if so, we should think how to avoid computing the decimation each time.
     # algorithm hyper parameters:
-    mid_ratio = 3
 
     mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
