@@ -1,7 +1,6 @@
 import random
 import cv2 as cv
 import tifffile
-import random
 import rotate_image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -172,3 +171,49 @@ def affinic_from_2020_to_2018(point_2020):
     # plt.imshow(image_2018[point_2018[0]:point_2018[0] + 200, point_2018[1]:point_2018[1] + 200, :])
     # plt.show()
     return point_2018
+
+
+def small_rand_rotate(im, seed=1):
+    random.seed(seed)
+    angle = random.randint(0, 5)
+    im = rotate_image.rotate(im, angle)
+    return im
+
+
+def generate_true_points(initial_p, im_shape, uav_im_shape, N, general_direction, step_ratio):
+    np.random.seed(initial_p[0] + initial_p[1])
+    max_step = np.round(np.array(uav_im_shape) / step_ratio).astype(int)
+    pts = np.zeros((N,2), int)
+    pts[0] = initial_p
+    for i in range(1, N):
+        if general_direction == 'RD':
+            row = pts[i-1, 0] + np.random.randint(0, max_step[0])
+            col = pts[i-1, 1] + np.random.randint(0, max_step[1])
+        elif general_direction == 'R':
+            row = pts[i-1, 0] + np.random.randint(-int(max_step[0]/5), int(max_step[0]/5))
+            col = pts[i-1, 1] + np.random.randint(0, max_step[1])
+        elif general_direction == 'RU':
+            row = pts[i - 1, 0] - np.random.randint(0, max_step[0])
+            col = pts[i - 1, 1] + np.random.randint(0, max_step[1])
+        elif general_direction == 'U':
+            row = pts[i - 1, 0] - np.random.randint(0, max_step[0])
+            col = pts[i-1, 1] + np.random.randint(-int(max_step[1]/5), int(max_step[1]/5))
+        elif general_direction == 'LU':
+            row = pts[i - 1, 0] - np.random.randint(0, max_step[0])
+            col = pts[i - 1, 1] - np.random.randint(0, max_step[1])
+        elif general_direction == 'L':
+            row = pts[i - 1, 0] + np.random.randint(-int(max_step[0] / 5), int(max_step[0] / 5))
+            col = pts[i - 1, 1] - np.random.randint(0, max_step[1])
+        elif general_direction == 'LD':
+            row = pts[i - 1, 0] + np.random.randint(0, max_step[0])
+            col = pts[i - 1, 1] - np.random.randint(0, max_step[1])
+        elif general_direction == 'D':
+            row = pts[i - 1, 0] + np.random.randint(0, max_step[0])
+            col = pts[i - 1, 1] + np.random.randint(-int(max_step[1] / 5), int(max_step[1] / 5))
+        # The coordinates should't exceed the image bounds.
+        row = row * (row < (im_shape[0] - uav_im_shape[0] / 2)) + pts[i - 1, 0] * (
+                    row > (im_shape[0] - uav_im_shape[0] / 2))
+        col = col * (col < (im_shape[1] - uav_im_shape[1] / 2)) + pts[i - 1, 1] * (
+                    col > (im_shape[1] - uav_im_shape[1] / 2))
+        pts[i] = np.array([row, col])
+    return pts

@@ -6,6 +6,7 @@ import copy
 import math
 import algorithm_functions
 import change_resolution
+import sim_func
 
 #%% parameters
 
@@ -40,9 +41,10 @@ def getPoints(im, N):
 
 #%%
 # Let the user draw points.
-N = 5
+N = 15
 # true_points = getPoints(images[0], N)
-true_points = np.array([[152, 878], [153, 887], [153, 899], [150, 907], [147, 918]])  # [R, C]. Resize_ratio = 1.
+true_points = sim_func.generate_true_points((150, 400), images[0].shape, uav_image_size, N, 'R', 4)
+# true_points = np.array([[152, 878], [153, 887], [153, 899], [150, 907], [147, 918]])  # [R, C]. Resize_ratio = 1.
 # true_points = np.array([[85, 390], [85, 382], [85, 374], [85, 367], [85, 359]])  # [R, C]. Resize_ratio = 2.
 # true_points = np.array([[2401, 1237],[2395, 1253],[2395, 1270],[2395, 1286],[2390, 1292]]) # for east_image
 
@@ -65,8 +67,9 @@ est_pts = np.zeros(true_points.shape).astype(int)
 est_pts[0] = true_points[0]  # First location is given
 for i in range(1,len(true_points)):
     # TODO: do not extract uav image from database.
-    uav_image2020 = algorithm_functions.center2im(true_points_prime[i], images[1], uav_image_size,cfg_rand_rotate)
-    # uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size,cfg_rand_rotate)
+    uav_image2020 = algorithm_functions.center2im(true_points_prime[i], images[1], uav_image_size)
+    #uav_image2020 = sim_func.small_rand_rotate(uav_image2020)
+    # uav_image2018 = algorithm_functions.center2im(true_points[i], images[0], uav_image_size)
     est_pts[i] = algorithm_functions.calc_uav_cor(uav_image=uav_image2020, prev_cor=est_pts[i-1], large_image=images[0])
 
 
