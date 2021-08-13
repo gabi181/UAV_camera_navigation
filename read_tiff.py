@@ -6,7 +6,21 @@ from sim_func import *
 from scipy import ndimage
 from pathlib import Path
 import rotate_image
-import matching
+
+
+### creat east_image ###
+raster_path_2020 = "wetransfer-e55797 2020/ecw1.tif"
+raster_path_2018 = "wetransfer-8334c6 2018/TechnionOrtho20181.tif"
+im = tifffile.imread(raster_path_2020)[:][:][:]
+image_2020 = np.array(im)
+im_18 = tifffile.imread(raster_path_2018)[:][:][:]
+image_2018 = np.array(im_18)
+
+east_image_2020 = image_2020[6000:10000,10000:14000]
+east_image_2018 = image_2018[6070:10130,9900:13900]
+
+img = np.uint8(east_image_2018)
+plt.imsave("east_im_18.jpg",img)
 
 p = Path('.')
 #raster_path = p.resolve().parent / 'data' / 'ecw1.tif'
@@ -34,4 +48,6 @@ plt.imshow(med_im)
 plt.show()
 #print('hi')
 #%%
+
+
 
