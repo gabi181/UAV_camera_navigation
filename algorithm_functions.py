@@ -227,28 +227,27 @@ def match_with_sift(med_im,small_im):
     return uav_cor, H
 
 
-def calc_uav_cor(uav_image, prev_cor, large_image):
+def calc_uav_cor(uav_image, prev_cor, large_image, mid_ratio, fails_num):
     """
     This is the user function. Wraps the main algorithm.
     :param uav_image: The input from the UAV camera.
     :param prev_cor:  Previous coordinates to reduce the search area.
-    :param large_image: The data base. TODO: maybe we should consider reading the data base in the function.
-                                             And think about how to handel the data base (keeping all of it in memory
-                                             might be impossible)
+    :param large_image: The data base.
+    :param mid_ratio: uav image shape is multiplied by mid ratio to create the searching area.
     :return: Estimated current coordinates.
     """
-    # TODO: maybe resize ratio should be algorithm parameter not simulation parameter.
-    #       if so, we should think how to avoid computing the decimation each time.
-    # algorithm hyper parameters:
-    mid_ratio = 3
-
+    if fails_num > 2:
+        mid_ratio = 2 * mid_ratio
     mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
     upperleft_prev_cor = center2upperleft(prev_cor, mid_image.shape)
     est_large_cor = upperleft_prev_cor + est_mid_cor
 
     # Edge cases:
-    if ((est_mid_cor[0]>mid_image.shape[0]) or (est_mid_cor[1]>mid_image.shape[1])):
+    if est_mid_cor[0] > mid_image.shape[0] or est_mid_cor[1] > mid_image.shape[1]:
         est_large_cor = prev_cor
-    return est_large_cor
+        fails_num += 1
+    else:
+        fails_num = 0
+    return est_large_cor, fails_num
 
