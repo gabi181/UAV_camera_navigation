@@ -217,14 +217,14 @@ def match_with_sift(med_im,small_im):
     fig, ax = plt.subplots(2, 1)
     ax[0].imshow(med_im)
     ax[1].imshow(small_im)
-    p = np.array([[858], [134]])
+    pt = np.array([[100], [100]])
     A = H[:,[0,1]]
     b = H[:,[2]]
-    p_prime = np.round(A @ p + b).astype(int)
+    p_prime = np.round(A @ pt + b).astype(int)
     ax[1].scatter(p[0], p[1], marker=".", color="red", s=50)
     ax[0].scatter(p_prime[0], p_prime[1], marker=".", color="red", s=50) 
     """
-    return uav_cor, H
+    return uav_cor, H # [R, C]
 
 
 def calc_uav_cor(uav_image, prev_cor, large_image, mid_ratio, fails_num):
@@ -240,9 +240,15 @@ def calc_uav_cor(uav_image, prev_cor, large_image, mid_ratio, fails_num):
         mid_ratio = 2 * mid_ratio
     mid_image = center2im(prev_cor, large_image, np.array(uav_image.shape)*mid_ratio)
     est_mid_cor, _ = match_with_sift(mid_image, uav_image)
-    upperleft_prev_cor = center2upperleft(prev_cor, mid_image.shape)
+    upperleft_prev_cor = center2upperleft(prev_cor, np.array(uav_image.shape)*mid_ratio)
     est_large_cor = upperleft_prev_cor + est_mid_cor
-
+    """
+    fig, ax = plt.subplots(2, 1)
+    ax[0].imshow(mid_image)
+    ax[1].imshow(large_image)
+    ax[0].scatter(est_mid_cor[1], est_mid_cor[0], marker=".", color="red", s=50)
+    ax[1].scatter(est_large_cor[1], est_large_cor[0], marker=".", color="red", s=50)
+    """
     # Edge cases:
     if est_mid_cor[0] > mid_image.shape[0] or est_mid_cor[1] > mid_image.shape[1]:
         est_large_cor = prev_cor
