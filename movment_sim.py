@@ -2,8 +2,6 @@ from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import copy
-import math
 import pytz
 from datetime import datetime
 
@@ -28,8 +26,8 @@ cfg_rand_rotate = 0
 # TODO: maybe we should consider reading the data base in the function.
 #  And think about how to handel the data base (keeping all of it in memory might be impossible)
 p = Path('.')
-q = p.resolve().parent / 'data' / 'simple_data'
-# q = p.resolve().parent / 'data' / 'east_data'
+# q = p.resolve().parent / 'data' / 'simple_data'
+q = p.resolve().parent / 'data' / 'east_data'
 save_path = p.resolve().parent / 'results'
 im_num = sum([True for f in q.iterdir() if f.is_file()])
 
@@ -42,23 +40,14 @@ for i, im in enumerate(images):
     images[i] = change_resolution.change_resolution(im, resize_ratio)
 
 
-# %%
-def getPoints(im, N):
-    plt.figure()
-    plt.imshow(im)
-    pts = np.round(np.array(plt.ginput(N, timeout=120))).astype(int)
-    pts = np.flip(pts, axis=1)
-    plt.close()
-    return pts
-
-
 #############################
 # %% generate path points.
 #############################
-N = 15
-# true_points = getPoints(images[0], N)
-first_coo = (75, 200)
-true_points = sim_func.generate_true_points(first_coo, images[0].shape, uav_image_size, N, 'R', step_ratio)
+N = 10
+#true_points = getPoints(images[0], N)
+# first_coo = sim_func.getPoints(images[0], 1).squeeze()
+first_coo = np.array([611, 391])
+true_points = sim_func.generate_true_points(first_coo, images[0].shape, uav_image_size, N, 'U', step_ratio)
 # true_points = np.array([[152, 878], [153, 887], [153, 899], [150, 907], [147, 918]])  # [R, C]. Resize_ratio = 1.
 # true_points = np.array([[85, 390], [85, 382], [85, 374], [85, 367], [85, 359]])  # [R, C]. Resize_ratio = 2.
 # true_points = np.array([[2401, 1237],[2395, 1253],[2395, 1270],[2395, 1286],[2390, 1292]]) # for east_image
@@ -96,8 +85,6 @@ for i in range(1, len(true_points)):
 
 
 # %%
-def calc_distance(p1, p2):
-    return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)  # Pythagorean theorem
 
 
 ############################
@@ -111,7 +98,7 @@ plt.scatter(est_pts[:, 1], est_pts[:, 0], marker=".", color="blue", s=50)
 
 dists = []
 for i in range(len(est_pts)):
-    dists.append(calc_distance(est_pts[i], true_points[i]))
+    dists.append(sim_func.calc_distance(est_pts[i], true_points[i]))
 avg_err = int(sum(dists)/N)
 # plot distances
 fig2 = plt.figure(2)
@@ -121,10 +108,11 @@ text = ("Avg Err = " + str(avg_err) + '\t' +
         "Search area ratio = " + str(mid_ratio) + '\t' +
         "Rotate = " + str(rotate) + '\t' +
         "reduced resolution by " + str(resize_ratio) + '\t' +
-        "max step size = " + str(int(calc_distance(max_step, (0, 0)))))
+        "step_ratio = " + str(step_ratio) + "\t" +
+        "max step size = " + str(int(sim_func.calc_distance(max_step, (0, 0)))))
 
 plt.title(text)
-plt.show()
+
 
 ##############################
 # Save figures and statistics.
@@ -147,3 +135,5 @@ if save:
     plt.savefig(save_path / ('Path_' + israel_datetime.strftime("%d-%m_%H-%M") + '.jpg'))
     plt.figure(2)
     plt.savefig(save_path / ('Error_' + israel_datetime.strftime("%d-%m_%H-%M") + '.jpg'))
+
+plt.show()

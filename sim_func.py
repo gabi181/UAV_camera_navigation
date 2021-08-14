@@ -4,6 +4,7 @@ import tifffile
 import rotate_image
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 
 def create_images(im,im_18,med_im_width = 1000, med_im_height = 1000):
@@ -217,3 +218,16 @@ def generate_true_points(initial_p, im_shape, uav_im_shape, N, general_direction
                     col > (im_shape[1] - uav_im_shape[1] / 2))
         pts[i] = np.array([row, col])
     return pts
+
+
+def getPoints(im, N):
+    plt.figure()
+    plt.imshow(im)
+    pts = np.round(np.array(plt.ginput(N, timeout=120))).astype(int)
+    pts = np.flip(pts, axis=1)
+    plt.close()
+    return pts
+
+
+def calc_distance(p1, p2):
+    return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)  # Pythagorean theorem
