@@ -250,7 +250,8 @@ def calc_uav_cor(uav_image, prev_cor, large_image, mid_ratio, fails_num):
     ax[1].scatter(est_large_cor[1], est_large_cor[0], marker=".", color="red", s=50)
     """
     # Edge cases:
-    if est_mid_cor[0] > mid_image.shape[0] or est_mid_cor[1] > mid_image.shape[1]:
+    if est_mid_cor[0] > mid_image.shape[0] or est_mid_cor[1] > mid_image.shape[1] or\
+            est_mid_cor[0] < 0 or est_mid_cor[1] < 0:
         est_large_cor = prev_cor
         fails_num += 1
     else:
