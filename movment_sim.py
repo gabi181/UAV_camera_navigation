@@ -100,8 +100,24 @@ for dest in uav_path[1:]:
             uav_image = sim_func.small_rand_rotate(uav_image)
         est_locations.append(uav.update_location(uav_image))
 
+######################
+# %% Animation Plot
+######################
+fig1 = plt.figure(5)
+plt.imshow(images[0])
+plt.scatter(true_points[:, 1], true_points[:, 0], marker=".", color="red", s=50)
+for i in range(len(true_points)):
+    if(i != 0):
+        rectangle.remove()
+    col= max(est_pts[i][1]-uav_image_size[1]/2,0)
+    col_size = est_pts[i][1] - col + min(uav_image_size[1]/2,images[0].shape[1] - est_pts[i][1])
+    row= max(est_pts[i][0]-uav_image_size[0]/2,0)
+    row_size = est_pts[i][0] - row + min(uav_image_size[0]/2,images[0].shape[0] - est_pts[i][0])
+    rectangle = plt.Rectangle((col, row), col_size, row_size, fill=None,ec="red")
+    plt.gca().add_patch(rectangle)
+    plt.scatter(est_pts[:i+1, 1], est_pts[:i+1, 0], marker=".", color="blue", s=50)
+    plt.pause(0.01)
 
-# %%
 
 
 ############################
