@@ -103,19 +103,21 @@ for dest in uav_path[1:]:
 ######################
 # %% Animation Plot
 ######################
+est_locations = np.array(est_locations)
+true_locations = np.array(true_locations)
 fig1 = plt.figure(5)
 plt.imshow(images[0])
-plt.scatter(true_points[:, 1], true_points[:, 0], marker=".", color="red", s=50)
-for i in range(len(true_points)):
+plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="red", s=50)
+for i in range(len(true_locations)):
     if(i != 0):
         rectangle.remove()
-    col= max(est_pts[i][1]-uav_image_size[1]/2,0)
-    col_size = est_pts[i][1] - col + min(uav_image_size[1]/2,images[0].shape[1] - est_pts[i][1])
-    row= max(est_pts[i][0]-uav_image_size[0]/2,0)
-    row_size = est_pts[i][0] - row + min(uav_image_size[0]/2,images[0].shape[0] - est_pts[i][0])
+    col= max(est_locations[i][1]-height[1]/2,0)
+    col_size = est_locations[i][1] - col + min(height[1]/2,images[0].shape[1] - est_locations[i][1])
+    row= max(est_locations[i][0]-height[0]/2,0)
+    row_size = est_locations[i][0] - row + min(height[0]/2,images[0].shape[0] - est_locations[i][0])
     rectangle = plt.Rectangle((col, row), col_size, row_size, fill=None,ec="red")
     plt.gca().add_patch(rectangle)
-    plt.scatter(est_pts[:i+1, 1], est_pts[:i+1, 0], marker=".", color="blue", s=50)
+    plt.scatter(est_locations[:i+1, 1], est_locations[:i+1, 0], marker=".", color="blue", s=50)
     plt.pause(0.01)
 
 
@@ -126,8 +128,8 @@ for i in range(len(true_points)):
 # plot true points and estimated points.
 fig1 = plt.figure(1)
 plt.imshow(images[0])
-plt.scatter(np.array(true_locations)[:, 1], np.array(true_locations)[:, 0], marker=".", color="red", s=50)
-plt.scatter(np.array(est_locations)[:, 1], np.array(est_locations)[:, 0], marker=".", color="blue", s=50)
+plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="red", s=50)
+plt.scatter(est_locations[:, 1], est_locations[:, 0], marker=".", color="blue", s=50)
 
 dists = []
 for i in range(len(est_locations)):
