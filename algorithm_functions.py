@@ -5,6 +5,19 @@ from skimage.feature import hog
 import random
 import rotate_image
 
+
+def cart2pol(row_col):
+    r = np.sqrt(row_col[0]**2 + row_col[1]**2)
+    theta = np.arctan2(-row_col[0], row_col[1])
+    return np.array([r, theta])
+
+
+def pol2cart(r_theta):
+    x = np.round(r_theta[0] * np.cos(r_theta[1])).astype(int)
+    y = np.round(r_theta[0] * np.sin(r_theta[1])).astype(int)
+    return np.array([-y, x])
+
+
 def upperleft2center(upperleft_cor, im_shape):
     """
     :param upperleft_cor: Expects to get row-column coordinates. not x-y.
