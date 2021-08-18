@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytz
 from datetime import datetime
-
+from matplotlib.lines import Line2D
 import algorithm_functions
 import change_resolution
 import sim_func
@@ -87,9 +87,23 @@ for i in range(1, len(true_points)):
 ######################
 # %% Animation Plot
 ######################
+mid_image_size = (mid_ratio*uav_image_size[0],mid_ratio*uav_image_size[1])
 fig1 = plt.figure(5)
+plt.subplot(1,2,1)
+line1 = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
+line2 = Line2D([0], [0], color='red', linewidth=1, linestyle='-')
+labels = ['Estimated Points', 'Searching Area']
+plt.legend([line1, line2], labels)
+plt.title("Data Base Image")
 plt.imshow(images[0])
-plt.scatter(true_points[:, 1], true_points[:, 0], marker=".", color="red", s=50)
+plt.subplot(1,2,2)
+line3 = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
+line4 = Line2D([0], [0], color='green', linewidth=1, linestyle='-')
+labels = ['Real Points', 'UAV Image']
+plt.legend([line3, line4], labels)
+plt.title("Real World")
+plt.imshow(images[1])
+plt.subplot(1,2,2)
 for i in range(len(true_points)):
     if(i != 0):
         rectangle.remove()
@@ -98,8 +112,11 @@ for i in range(len(true_points)):
     row= max(est_pts[i][0]-uav_image_size[0]/2,0)
     row_size = est_pts[i][0] - row + min(uav_image_size[0]/2,images[0].shape[0] - est_pts[i][0])
     rectangle = plt.Rectangle((col, row), col_size, row_size, fill=None,ec="red")
+    plt.subplot(1,2,1)
     plt.gca().add_patch(rectangle)
     plt.scatter(est_pts[:i+1, 1], est_pts[:i+1, 0], marker=".", color="blue", s=50)
+    plt.subplot(1,2,2)
+    plt.scatter(true_points[:, 1], true_points[:, 0], marker=".", color="red", s=50)
     plt.pause(0.01)
 
 
@@ -108,10 +125,10 @@ for i in range(len(true_points)):
 # %% Statistics and results.
 ############################
 # plot true points and estimated points.
-fig1 = plt.figure(1)
-plt.imshow(images[0])
-plt.scatter(true_points[:, 1], true_points[:, 0], marker=".", color="red", s=50)
-plt.scatter(est_pts[:, 1], est_pts[:, 0], marker=".", color="blue", s=50)
+#fig1 = plt.figure(1)
+#plt.imshow(images[0])
+#plt.scatter(true_points[:, 1], true_points[:, 0], marker=".", color="red", s=50)
+#plt.scatter(est_pts[:, 1], est_pts[:, 0], marker=".", color="blue", s=50)
 
 dists = []
 for i in range(len(est_pts)):
