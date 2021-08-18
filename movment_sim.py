@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytz
 from datetime import datetime
+from matplotlib.lines import Line2D
 
 import algorithm_functions
 import change_resolution
@@ -23,9 +24,9 @@ save = False
 velocity = 20  # pixels per sec
 frame_rate = 1  # 1 / sec
 dest_thresh = 10
-wind_direction = 0
-wind_max_strength = 0
-noise = 0
+wind_direction = np.pi
+wind_max_strength = 5
+noise = 0.5
 
 # %% configuration
 cfg_rand_rotate = 0
@@ -50,9 +51,9 @@ for i, im in enumerate(images):
 #############################
 # %% generate path points.
 #############################
-N = 2
+N = 3
 # uav_path = sim_func.getPoints(images[0], N)
-uav_path = np.array(([[628, 300], [518, 409]]))
+uav_path = np.array([[597, 390], [444, 390], [335, 323]])
 # first_coo = sim_func.getPoints(images[0], 1).squeeze()
 first_coo = np.array([477, 478])
 # true_points = sim_func.generate_true_points(first_coo, images[0].shape, uav_image_size, N, 'RD', step_ratio)

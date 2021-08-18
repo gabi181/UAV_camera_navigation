@@ -25,11 +25,11 @@ class Shift:
         return wind_vec
 
     def noise_shift(self, velocity):
-        if velocity == 0 or int(self.noise / velocity) == 0:
+        if velocity == 0 or int(self.noise * velocity) == 0:
             row, col = 0, 0
         else:
-            row = np.random.randint(0, int(self.noise / velocity))
-            col = np.random.randint(0, int(self.noise / velocity))
+            row = np.random.randint(-int(self.noise * velocity), int(self.noise * velocity))
+            col = np.random.randint(-int(self.noise * velocity), int(self.noise * velocity))
         return np.array([row, col])
 
 
@@ -61,6 +61,7 @@ class Uav:
         self.fails_num = 0
 
     def set_dest(self, destination):
+        self.arrived = False
         self.destination = destination
 
     def update_location(self, uav_image):
