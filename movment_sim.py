@@ -65,8 +65,8 @@ first_coo = np.array([477, 478])
 
 hetro_true_points = np.concatenate((np.flip(uav_path).T, np.ones((1, len(uav_path)), int)))  # [x, y, 1].T
 # H: right -> left
-_, H = algorithm_functions.match_with_sift(images[1], images[0])
-# H = np.array([[0.9998136, 0.02087663, 8.69967255], [-0.0208969, 0.99982217, 4.59428211]])  # H for east_image
+# _, H = algorithm_functions.match_with_sift(images[1], images[0])
+H = np.array([[0.9998136, 0.02087663, 8.69967255], [-0.0208969, 0.99982217, 4.59428211]])  # H for east_image
 true_points_prime = np.round(np.flip((H @ hetro_true_points).T)).astype(int)  # [R, C]
 """
 fig, ax = plt.subplots(2, 1)
@@ -105,36 +105,59 @@ for dest in uav_path[1:]:
 ######################
 est_locations = np.array(est_locations)
 true_locations = np.array(true_locations)
+uav_path = np.array(uav_path)
 fig1 = plt.figure(5)
+
 plt.subplot(1,2,1)
-line1 = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
-line2 = Line2D([0], [0], color='red', linewidth=1, linestyle='-')
-labels = ['Estimated Points', 'Searching Area']
-plt.legend([line1, line2], labels)
-plt.title("Data Base Image")
+dest_pts_leg = plt.scatter(uav_path[:, 1], uav_path[:, 0], marker="s", color="red", s=30)
+est_pts_leg = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
+search_area_leg = Line2D([0], [0], color='blue', linewidth=1, linestyle='-')
+curr_est_leg = plt.scatter(est_locations[0, 1], est_locations[0, 0], marker="x", color="blue", s=50)
+labels = ['Estimated Points', 'Searching Area',"Current Estimated Location",'Destination Points']
+plt.legend([est_pts_leg, search_area_leg, curr_est_leg, dest_pts_leg], labels)
+plt.title("Data Base Image",fontdict={'fontsize': 18, 'fontweight': 'medium'})
 plt.imshow(images[0])
+
 plt.subplot(1,2,2)
-line3 = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
-line4 = Line2D([0], [0], color='green', linewidth=1, linestyle='-')
-labels = ['Real Points', 'UAV Image']
-plt.legend([line3, line4], labels)
-plt.title("Real World")
+true_pts_leg = Line2D([0], [0], color='yellow', linewidth=3, linestyle='dotted')
+uav_image_leg = Line2D([0], [0], color='yellow', linewidth=1, linestyle='-')
+curr_true_leg = plt.scatter(true_locations[0, 1], true_locations[0, 0], marker="x", color="yellow", s=50)
+labels = ['Real Points', 'UAV Image', 'Current True Location']
+plt.legend([true_pts_leg, uav_image_leg, curr_true_leg], labels)
+plt.title("Real World",fontdict={'fontsize': 18, 'fontweight': 'medium'})
 plt.imshow(images[1])
-plt.subplot(1,2,2)
+plt.plot([500],[500],'x')
+
 for i in range(len(true_locations)):
     if(i != 0):
-        rectangle.remove()
-    col= max(est_locations[i][1]-height[1]/2,0)
-    col_size = est_locations[i][1] - col + min(height[1]/2,images[0].shape[1] - est_locations[i][1])
-    row= max(est_locations[i][0]-height[0]/2,0)
-    row_size = est_locations[i][0] - row + min(height[0]/2,images[0].shape[0] - est_locations[i][0])
-    rectangle = plt.Rectangle((col, row), col_size, row_size, fill=None,ec="red")
+        rectangle_image.remove()
+        rectangle_search.remove()
+    curr_est_leg.remove()
+    curr_true_leg.remove()
+
+    # uav image rectangle creating
+    col_image= max(est_locations[i][1]-height[1]/2,0)
+    col_size_image = est_locations[i][1] - col_image + min(height[1]/2,images[0].shape[1] - est_locations[i][1])
+    row_image = max(est_locations[i][0]-height[0]/2,0)
+    row_size_image = est_locations[i][0] - row_image + min(height[0]/2,images[0].shape[0] - est_locations[i][0])
+    rectangle_image = plt.Rectangle((col_image, row_image), col_size_image, row_size_image, fill=None,ec="yellow")
+
+    # searching area rectangle creating
+    col_search= max(est_locations[i][1]-searching_area_ratio*height[1]/2,0)
+    col_size_search = est_locations[i][1] - col_search + min(searching_area_ratio*height[1]/2,images[0].shape[1] - est_locations[i][1])
+    row_search = max(est_locations[i][0]-searching_area_ratio*height[0]/2,0)
+    row_size_search = est_locations[i][0] - row_search + min(searching_area_ratio*height[0]/2,images[0].shape[0] - est_locations[i][0])
+    rectangle_search = plt.Rectangle((col_search, row_search), col_size_search, row_size_search, fill=None,ec="blue")
+
     plt.subplot(1,2,1)
-    plt.gca().add_patch(rectangle)
+    plt.gca().add_patch(rectangle_search)
     plt.scatter(est_locations[:i+1, 1], est_locations[:i+1, 0], marker=".", color="blue", s=50)
+    curr_est_leg = plt.scatter(est_locations[i, 1], est_locations[i, 0], marker="x", color="blue", s=70)
     plt.subplot(1,2,2)
-    plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="red", s=50)
-    plt.pause(0.01)
+    plt.gca().add_patch(rectangle_image)
+    plt.scatter(true_locations[:i+1, 1], true_locations[:i+1, 0], marker=".", color="yellow", s=50)
+    curr_true_leg = plt.scatter(true_locations[i, 1], true_locations[i, 0], marker="x", color="yellow", s=50)
+    plt.pause(1)
 
 
 
