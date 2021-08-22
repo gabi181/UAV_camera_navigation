@@ -22,9 +22,11 @@ step_ratio = 4
 max_step = np.round(np.array(height) / step_ratio).astype(int)
 save = False
 animation = False
-velocity = 20  # pixels per sec
+base_velocity = 20  # pixels per sec
 frame_rate = 1  # 1 / sec
-dest_thresh = 10
+dest_thresh = 40
+final_dest_thresh = 10
+slow_area_ratio = 3
 wind_direction = np.pi
 wind_max_strength = 5
 noise = 0.5
@@ -82,7 +84,7 @@ ax[1].scatter(true_points_prime[:,1], true_points_prime[:,0], marker=".", color=
 ############################################################
 search_params = uav_control.Search_Params(height, resize_ratio, searching_area_ratio)
 shifts = uav_control.Shift(wind_direction, wind_max_strength, noise)
-uav = uav_control.Uav(velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh)
+uav = uav_control.Uav(base_velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh ,slow_area_ratio)
 ############################################################
 # %% Use the Algorithm to calculate estimated Drone location.
 ############################################################
@@ -92,6 +94,8 @@ est_directions = []
 true_directions = []
 for dest in uav_path[1:]:
     uav.set_dest(dest)
+    if (dest == uav_path[1:][-1]).all():
+        uav.dest_thresh = final_dest_thresh
     while not uav.arrived:
         direction = uav.calc_direction()
         est_directions.append(np.rad2deg(direction))

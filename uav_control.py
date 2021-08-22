@@ -48,8 +48,9 @@ class Uav:
     velocity: pixels per sec
     frame_rate: 1 / pixels
     """
-    def __init__(self, velocity, frame_rate, start_location, data_base, search_params, dest_thresh):
-        self.velocity = velocity
+    def __init__(self, base_velocity, frame_rate, start_location, data_base, search_params, dest_thresh, slow_area_ratio):
+        self.base_velocity = base_velocity
+        self.velocity = self.base_velocity
         self.frame_rate = frame_rate
         self.est_curr_location = start_location
         self.data_base = data_base
@@ -59,6 +60,7 @@ class Uav:
         self.destination = np.array([-1, -1])
         self.distance = -1
         self.fails_num = 0
+        self.slow_area = slow_area_ratio * self.dest_thresh
 
     def set_dest(self, destination):
         self.arrived = False
@@ -73,6 +75,11 @@ class Uav:
         self.distance, _ = algorithm_functions.cart2pol(self.destination - self.est_curr_location)
         if self.distance < self.dest_thresh:
             self.arrived = True
+            self.velocity = self.base_velocity
+        elif self.distance < self.slow_area:
+            self.velocity = int(self.base_velocity/2)
+        else:
+            self.velocity = self.base_velocity
         return self.est_curr_location
 
     def move(self, direction, shift, true_location):
