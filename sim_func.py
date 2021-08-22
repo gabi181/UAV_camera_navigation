@@ -231,3 +231,9 @@ def getPoints(im, N):
 
 def calc_distance(p1, p2):
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)  # Pythagorean theorem
+
+
+def transform_pts(p, H):
+    p_hetro = np.expand_dims(np.insert(np.flip(p), 2, 1), axis=1)
+    p_prime = np.squeeze(np.round(np.flip((H @ p_hetro).T)).astype(int))
+    return p_prime

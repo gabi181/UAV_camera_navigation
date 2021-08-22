@@ -1,5 +1,16 @@
 import numpy as np
 import algorithm_functions
+from collections import deque
+
+
+class MyDeque(deque):
+    def myappend(self, x):
+        if self.maxlen == len(self):
+            left = self.popleft()
+        else:
+            left = 0
+        self.append(x)
+        return left
 
 
 class Shift:
@@ -8,6 +19,7 @@ class Shift:
     strength: pixel per sec
     noise: pixels per sec
     """
+
     def __init__(self, wind_direction, wind_max_strength, noise):
         self.wind_direction = wind_direction
         self.wind_max_strength = wind_max_strength
@@ -37,6 +49,7 @@ class Search_Params:
     """
     height: image shape.
     """
+
     def __init__(self, height, resize_ratio, searching_area_ratio):
         self.height = height
         self.resize_ratio = resize_ratio
@@ -48,7 +61,8 @@ class Uav:
     velocity: pixels per sec
     frame_rate: 1 / pixels
     """
-    def __init__(self, velocity, frame_rate, start_location, data_base, search_params, dest_thresh):
+
+    def __init__(self, velocity, frame_rate, start_location, data_base, search_params, dest_thresh, wind_hist_len):
         self.velocity = velocity
         self.frame_rate = frame_rate
         self.est_curr_location = start_location
@@ -59,6 +73,9 @@ class Uav:
         self.destination = np.array([-1, -1])
         self.distance = -1
         self.fails_num = 0
+        self.est_wind_hist = MyDeque(maxlen=wind_hist_len)
+        self.next_location_hist = None  # Without wind.
+        self.est_wind = 0
 
     def set_dest(self, destination):
         self.arrived = False
@@ -80,14 +97,16 @@ class Uav:
         step_size = np.round(self.velocity / self.frame_rate).astype(int)
 
         move_vec = algorithm_functions.pol2cart(np.array([step_size, direction]))
+        self.next_location_hist = self.est_curr_location + move_vec  # Without wind.
         new_loc = true_location + move_vec + shift.noise_shift(self.velocity) + shift.wind_shift()
 
-
         # The coordinates should't exceed the image bounds.
-        row_out = new_loc[0] > (self.data_base.shape[0] - self.search_params.height[0] / 2) or new_loc[0] < self.search_params.height[0] / 2
-        col_out = new_loc[1] > (self.data_base.shape[1] - self.search_params.height[1] / 2) or new_loc[1] < self.search_params.height[1] / 2
-        new_loc[0] = new_loc[0] * (1-row_out) + true_location[0] * row_out
-        new_loc[1] = new_loc[1] * (1-col_out) + true_location[1] * col_out
+        row_out = new_loc[0] > (self.data_base.shape[0] - self.search_params.height[0] / 2) or new_loc[0] < \
+                  self.search_params.height[0] / 2
+        col_out = new_loc[1] > (self.data_base.shape[1] - self.search_params.height[1] / 2) or new_loc[1] < \
+                  self.search_params.height[1] / 2
+        new_loc[0] = new_loc[0] * (1 - row_out) + true_location[0] * row_out
+        new_loc[1] = new_loc[1] * (1 - col_out) + true_location[1] * col_out
 
         return new_loc
 
@@ -95,5 +114,10 @@ class Uav:
         _, theta = algorithm_functions.cart2pol(self.destination - self.est_curr_location)
         return theta
 
-
-
+    def estimate_wind(self):
+        cur_est_wind = algorithm_functions.cart2pol(self.est_curr_location - self.next_location_hist)
+        head_wind = self.est_wind_hist.myappend(cur_est_wind)
+        if len(self.est_wind_hist) == self.est_wind_hist.maxlen:
+            self.est_wind = self.est_wind + 1 / len(self.est_wind_hist) * (cur_est_wind - head_wind)  # Moving average.
+        else:
+            self.est_wind = self.est_wind + 1 / len(self.est_wind_hist) * (cur_est_wind - self.est_wind)

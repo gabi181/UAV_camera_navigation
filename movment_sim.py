@@ -24,9 +24,10 @@ save = False
 velocity = 20  # pixels per sec
 frame_rate = 1  # 1 / sec
 dest_thresh = 10
-wind_direction = np.pi
-wind_max_strength = 5
-noise = 0.5
+wind_hist_len = 7
+wind_direction = 0  # np.pi
+wind_max_strength = 20
+noise = 0
 
 # %% configuration
 cfg_rand_rotate = 0
@@ -80,31 +81,34 @@ ax[1].scatter(true_points_prime[:,1], true_points_prime[:,0], marker=".", color=
 ############################################################
 search_params = uav_control.Search_Params(height, resize_ratio, searching_area_ratio)
 shifts = uav_control.Shift(wind_direction, wind_max_strength, noise)
-uav = uav_control.Uav(velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh)
+uav = uav_control.Uav(velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh, wind_hist_len)
 ############################################################
 # %% Use the Algorithm to calculate estimated Drone location.
 ############################################################
 est_locations = [uav_path[0]]
 true_locations = [uav_path[0]]
+true_locations_prime = [sim_func.transform_pts(uav_path[0], H)]
+
 for dest in uav_path[1:]:
     uav.set_dest(dest)
     while not uav.arrived:
         direction = uav.calc_direction()
-        new_location = uav.move(direction, shifts, true_locations[-1])
+        new_location = uav.move(direction, shifts, true_locations[-1])  # Move in real world
         true_locations.append(new_location)
         # Transform database coordinates to environment coordinates system. simulative only
-        new_location_hetro = np.expand_dims(np.insert(np.flip(new_location), 2, 1), axis=1)
-        new_location_prime = np.squeeze(np.round(np.flip((H @ new_location_hetro).T)).astype(int))
-        uav_image = algorithm_functions.center2im(new_location_prime, images[1], uav.search_params.height)
+        true_locations_prime.append(sim_func.transform_pts(new_location, H))
+        uav_image = algorithm_functions.center2im(true_locations_prime[-1], images[1], uav.search_params.height)
         if rotate:
             uav_image = sim_func.small_rand_rotate(uav_image)
-        est_locations.append(uav.update_location(uav_image))
+        est_locations.append(uav.update_location(uav_image))  # Estimate new location.
+        uav.estimate_wind()
 
 ######################
 # %% Animation Plot
 ######################
 est_locations = np.array(est_locations)
 true_locations = np.array(true_locations)
+true_locations_prime = np.array(true_locations_prime)
 uav_path = np.array(uav_path)
 fig1 = plt.figure(5)
 
@@ -121,14 +125,14 @@ plt.imshow(images[0])
 plt.subplot(1,2,2)
 true_pts_leg = Line2D([0], [0], color='yellow', linewidth=3, linestyle='dotted')
 uav_image_leg = Line2D([0], [0], color='yellow', linewidth=1, linestyle='-')
-curr_true_leg = plt.scatter(true_locations[0, 1], true_locations[0, 0], marker="x", color="yellow", s=50)
+curr_true_leg = plt.scatter(true_locations_prime[0, 1], true_locations_prime[0, 0], marker="x", color="yellow", s=50)
 labels = ['Real Points', 'UAV Image', 'Current True Location']
 plt.legend([true_pts_leg, uav_image_leg, curr_true_leg], labels)
 plt.title("Real World",fontdict={'fontsize': 18, 'fontweight': 'medium'})
 plt.imshow(images[1])
 plt.plot([500],[500],'x')
 
-for i in range(len(true_locations)):
+for i in range(len(true_locations_prime)):
     if(i != 0):
         rectangle_image.remove()
         rectangle_search.remove()
@@ -155,9 +159,9 @@ for i in range(len(true_locations)):
     curr_est_leg = plt.scatter(est_locations[i, 1], est_locations[i, 0], marker="x", color="blue", s=70)
     plt.subplot(1,2,2)
     plt.gca().add_patch(rectangle_image)
-    plt.scatter(true_locations[:i+1, 1], true_locations[:i+1, 0], marker=".", color="yellow", s=50)
-    curr_true_leg = plt.scatter(true_locations[i, 1], true_locations[i, 0], marker="x", color="yellow", s=50)
-    plt.pause(1)
+    plt.scatter(true_locations_prime[:i+1, 1], true_locations_prime[:i+1, 0], marker=".", color="yellow", s=50)
+    curr_true_leg = plt.scatter(true_locations_prime[i, 1], true_locations_prime[i, 0], marker="x", color="yellow", s=50)
+    plt.pause(0.2)
 
 
 
