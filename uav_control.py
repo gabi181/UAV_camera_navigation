@@ -77,7 +77,7 @@ class Uav:
             self.arrived = True
             self.velocity = self.base_velocity
         elif self.distance < self.slow_area:
-            self.velocity = int(self.base_velocity/2)
+            self.velocity = int(self.base_velocity*np.sqrt(self.distance/self.slow_area))
         else:
             self.velocity = self.base_velocity
         return self.est_curr_location
