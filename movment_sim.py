@@ -13,23 +13,23 @@ import uav_control
 
 # %% parameters
 
-resize_ratio = 2  # TODO: maybe resize ratio should be algorithm parameter not simulation parameter.
-                  #     if so, we should think how to avoid computing the decimation each time.
+resize_ratio = 2
 searching_area_ratio = 2
 height = (int(500 / resize_ratio), int(500 / resize_ratio))
 rotate = False
 step_ratio = 4
 max_step = np.round(np.array(height) / step_ratio).astype(int)
 save = False
-animation = False
+animation = True
 base_velocity = 20  # pixels per sec
 frame_rate = 1  # 1 / sec
 dest_thresh = 40
 final_dest_thresh = 10
 slow_area_ratio = 3
+wind_hist_len = 20
 wind_direction = np.pi
-wind_max_strength = 5
-noise = 0.5
+wind_max_strength = 15
+noise = 0.75
 
 
 # %% configuration
@@ -84,7 +84,8 @@ ax[1].scatter(true_points_prime[:,1], true_points_prime[:,0], marker=".", color=
 ############################################################
 search_params = uav_control.Search_Params(height, resize_ratio, searching_area_ratio)
 shifts = uav_control.Shift(wind_direction, wind_max_strength, noise)
-uav = uav_control.Uav(base_velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh, slow_area_ratio, wind_hist_len)
+uav = uav_control.Uav(base_velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh, slow_area_ratio,
+                      wind_hist_len)
 ############################################################
 # %% Use the Algorithm to calculate estimated Drone location.
 ############################################################

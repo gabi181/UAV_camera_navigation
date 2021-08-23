@@ -8,7 +8,7 @@ import rotate_image
 
 def cart2pol(row_col):
     r = np.sqrt(row_col[0]**2 + row_col[1]**2)
-    theta = np.arctan2(-row_col[0], row_col[1])
+    theta = np.arctan2(-row_col[0], row_col[1]) % (2 * np.pi)
     return np.array([r, theta])
 
 

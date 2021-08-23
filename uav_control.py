@@ -73,7 +73,7 @@ class Uav:
         self.destination = np.array([-1, -1])
         self.distance = -1
         self.fails_num = 0
-	self.slow_area = slow_area_ratio * self.dest_thresh
+        self.slow_area = slow_area_ratio * self.dest_thresh
         self.est_wind_hist = MyDeque(maxlen=wind_hist_len)
         self.next_location_hist = None  # Without wind.
         self.est_wind = np.array([0, 0])
@@ -103,7 +103,7 @@ class Uav:
         step_size = np.round(self.velocity / self.frame_rate).astype(int)
 
         move_vec = algorithm_functions.pol2cart(np.array([step_size, direction]))
-        wind_fix_vec = algorithm_functions.pol2cart(np.array([self.est_wind[0], self.est_wind[1] + np.pi]))
+        wind_fix_vec = - self.est_wind
         self.next_location_hist = self.est_curr_location + move_vec + wind_fix_vec  # Without wind.
         new_loc = true_location + move_vec + shift.noise_shift(self.velocity) + shift.wind_shift() + wind_fix_vec
 
@@ -122,7 +122,7 @@ class Uav:
         return theta
 
     def estimate_wind(self):
-        cur_est_wind = algorithm_functions.cart2pol(self.est_curr_location - self.next_location_hist)
+        cur_est_wind = self.est_curr_location - self.next_location_hist
         head_wind = self.est_wind_hist.myappend(cur_est_wind)
         if len(self.est_wind_hist) == self.est_wind_hist.maxlen:  # Steady state.
             self.est_wind = self.est_wind + 1 / len(self.est_wind_hist) * (cur_est_wind - head_wind)  # Moving average.
