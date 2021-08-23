@@ -75,7 +75,7 @@ class Uav:
         self.fails_num = 0
         self.est_wind_hist = MyDeque(maxlen=wind_hist_len)
         self.next_location_hist = None  # Without wind.
-        self.est_wind = 0
+        self.est_wind = np.array([0, 0])
 
     def set_dest(self, destination):
         self.arrived = False
@@ -97,8 +97,9 @@ class Uav:
         step_size = np.round(self.velocity / self.frame_rate).astype(int)
 
         move_vec = algorithm_functions.pol2cart(np.array([step_size, direction]))
-        self.next_location_hist = self.est_curr_location + move_vec  # Without wind.
-        new_loc = true_location + move_vec + shift.noise_shift(self.velocity) + shift.wind_shift()
+        wind_fix_vec = algorithm_functions.pol2cart(np.array([self.est_wind[0], self.est_wind[1] + np.pi]))
+        self.next_location_hist = self.est_curr_location + move_vec + wind_fix_vec  # Without wind.
+        new_loc = true_location + move_vec + shift.noise_shift(self.velocity) + shift.wind_shift() + wind_fix_vec
 
         # The coordinates should't exceed the image bounds.
         row_out = new_loc[0] > (self.data_base.shape[0] - self.search_params.height[0] / 2) or new_loc[0] < \
@@ -117,7 +118,7 @@ class Uav:
     def estimate_wind(self):
         cur_est_wind = algorithm_functions.cart2pol(self.est_curr_location - self.next_location_hist)
         head_wind = self.est_wind_hist.myappend(cur_est_wind)
-        if len(self.est_wind_hist) == self.est_wind_hist.maxlen:
+        if len(self.est_wind_hist) == self.est_wind_hist.maxlen:  # Steady state.
             self.est_wind = self.est_wind + 1 / len(self.est_wind_hist) * (cur_est_wind - head_wind)  # Moving average.
-        else:
+        else:  # while Filling the FIFO - using cumulative moving average.
             self.est_wind = self.est_wind + 1 / len(self.est_wind_hist) * (cur_est_wind - self.est_wind)
