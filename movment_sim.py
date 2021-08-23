@@ -16,18 +16,21 @@ import uav_control
 resize_ratio = 2  # TODO: maybe resize ratio should be algorithm parameter not simulation parameter.
                   #     if so, we should think how to avoid computing the decimation each time.
 searching_area_ratio = 2
-height = (int(400 / resize_ratio), int(400 / resize_ratio))
+height = (int(500 / resize_ratio), int(500 / resize_ratio))
 rotate = False
 step_ratio = 4
 max_step = np.round(np.array(height) / step_ratio).astype(int)
 save = False
-velocity = 20  # pixels per sec
+animation = False
+base_velocity = 20  # pixels per sec
 frame_rate = 1  # 1 / sec
-dest_thresh = 10
-wind_hist_len = 7
-wind_direction = 0  # np.pi
-wind_max_strength = 20
-noise = 0
+dest_thresh = 40
+final_dest_thresh = 10
+slow_area_ratio = 3
+wind_direction = np.pi
+wind_max_strength = 5
+noise = 0.5
+
 
 # %% configuration
 cfg_rand_rotate = 0
@@ -81,20 +84,26 @@ ax[1].scatter(true_points_prime[:,1], true_points_prime[:,0], marker=".", color=
 ############################################################
 search_params = uav_control.Search_Params(height, resize_ratio, searching_area_ratio)
 shifts = uav_control.Shift(wind_direction, wind_max_strength, noise)
-uav = uav_control.Uav(velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh, wind_hist_len)
+uav = uav_control.Uav(base_velocity, frame_rate, uav_path[0], images[0], search_params, dest_thresh, slow_area_ratio, wind_hist_len)
 ############################################################
 # %% Use the Algorithm to calculate estimated Drone location.
 ############################################################
 est_locations = [uav_path[0]]
 true_locations = [uav_path[0]]
 true_locations_prime = [sim_func.transform_pts(uav_path[0], H)]
+est_directions = []
+true_directions = []
 
 for dest in uav_path[1:]:
     uav.set_dest(dest)
+    if (dest == uav_path[1:][-1]).all():
+        uav.dest_thresh = final_dest_thresh
     while not uav.arrived:
         direction = uav.calc_direction()
+        est_directions.append(np.rad2deg(direction))
         new_location = uav.move(direction, shifts, true_locations[-1])  # Move in real world
         true_locations.append(new_location)
+        true_directions.append(np.rad2deg(algorithm_functions.cart2pol(dest-new_location)[1]))
         # Transform database coordinates to environment coordinates system. simulative only
         true_locations_prime.append(sim_func.transform_pts(new_location, H))
         uav_image = algorithm_functions.center2im(true_locations_prime[-1], images[1], uav.search_params.height)
@@ -109,59 +118,61 @@ for dest in uav_path[1:]:
 est_locations = np.array(est_locations)
 true_locations = np.array(true_locations)
 true_locations_prime = np.array(true_locations_prime)
-uav_path = np.array(uav_path)
-fig1 = plt.figure(5)
 
-plt.subplot(1,2,1)
-dest_pts_leg = plt.scatter(uav_path[:, 1], uav_path[:, 0], marker="s", color="red", s=30)
-est_pts_leg = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
-search_area_leg = Line2D([0], [0], color='blue', linewidth=1, linestyle='-')
-curr_est_leg = plt.scatter(est_locations[0, 1], est_locations[0, 0], marker="x", color="blue", s=50)
-labels = ['Estimated Points', 'Searching Area',"Current Estimated Location",'Destination Points']
-plt.legend([est_pts_leg, search_area_leg, curr_est_leg, dest_pts_leg], labels)
-plt.title("Data Base Image",fontdict={'fontsize': 18, 'fontweight': 'medium'})
-plt.imshow(images[0])
-
-plt.subplot(1,2,2)
-true_pts_leg = Line2D([0], [0], color='yellow', linewidth=3, linestyle='dotted')
-uav_image_leg = Line2D([0], [0], color='yellow', linewidth=1, linestyle='-')
-curr_true_leg = plt.scatter(true_locations_prime[0, 1], true_locations_prime[0, 0], marker="x", color="yellow", s=50)
-labels = ['Real Points', 'UAV Image', 'Current True Location']
-plt.legend([true_pts_leg, uav_image_leg, curr_true_leg], labels)
-plt.title("Real World",fontdict={'fontsize': 18, 'fontweight': 'medium'})
-plt.imshow(images[1])
-plt.plot([500],[500],'x')
-
-for i in range(len(true_locations_prime)):
-    if(i != 0):
-        rectangle_image.remove()
-        rectangle_search.remove()
-    curr_est_leg.remove()
-    curr_true_leg.remove()
-
-    # uav image rectangle creating
-    col_image= max(est_locations[i][1]-height[1]/2,0)
-    col_size_image = est_locations[i][1] - col_image + min(height[1]/2,images[0].shape[1] - est_locations[i][1])
-    row_image = max(est_locations[i][0]-height[0]/2,0)
-    row_size_image = est_locations[i][0] - row_image + min(height[0]/2,images[0].shape[0] - est_locations[i][0])
-    rectangle_image = plt.Rectangle((col_image, row_image), col_size_image, row_size_image, fill=None,ec="yellow")
-
-    # searching area rectangle creating
-    col_search= max(est_locations[i][1]-searching_area_ratio*height[1]/2,0)
-    col_size_search = est_locations[i][1] - col_search + min(searching_area_ratio*height[1]/2,images[0].shape[1] - est_locations[i][1])
-    row_search = max(est_locations[i][0]-searching_area_ratio*height[0]/2,0)
-    row_size_search = est_locations[i][0] - row_search + min(searching_area_ratio*height[0]/2,images[0].shape[0] - est_locations[i][0])
-    rectangle_search = plt.Rectangle((col_search, row_search), col_size_search, row_size_search, fill=None,ec="blue")
+if animation:
+    uav_path = np.array(uav_path)
+    fig1 = plt.figure(5)
 
     plt.subplot(1,2,1)
-    plt.gca().add_patch(rectangle_search)
-    plt.scatter(est_locations[:i+1, 1], est_locations[:i+1, 0], marker=".", color="blue", s=50)
-    curr_est_leg = plt.scatter(est_locations[i, 1], est_locations[i, 0], marker="x", color="blue", s=70)
+    dest_pts_leg = plt.scatter(uav_path[:, 1], uav_path[:, 0], marker="s", color="red", s=30)
+    est_pts_leg = Line2D([0], [0], color='blue', linewidth=3, linestyle='dotted')
+    search_area_leg = Line2D([0], [0], color='blue', linewidth=1, linestyle='-')
+    curr_est_leg = plt.scatter(est_locations[0, 1], est_locations[0, 0], marker="x", color="blue", s=50)
+    labels = ['Estimated Points', 'Searching Area',"Current Estimated Location",'Destination Points']
+    plt.legend([est_pts_leg, search_area_leg, curr_est_leg, dest_pts_leg], labels)
+    plt.title("Data Base Image",fontdict={'fontsize': 18, 'fontweight': 'medium'})
+    plt.imshow(images[0])
+
     plt.subplot(1,2,2)
-    plt.gca().add_patch(rectangle_image)
-    plt.scatter(true_locations_prime[:i+1, 1], true_locations_prime[:i+1, 0], marker=".", color="yellow", s=50)
-    curr_true_leg = plt.scatter(true_locations_prime[i, 1], true_locations_prime[i, 0], marker="x", color="yellow", s=50)
-    plt.pause(0.2)
+    true_pts_leg = Line2D([0], [0], color='yellow', linewidth=3, linestyle='dotted')
+    uav_image_leg = Line2D([0], [0], color='yellow', linewidth=1, linestyle='-')
+    curr_true_leg = plt.scatter(true_locations_prime[0, 1], true_locations_prime[0, 0], marker="x", color="yellow", s=50)
+    labels = ['Real Points', 'UAV Image', 'Current True Location']
+    plt.legend([true_pts_leg, uav_image_leg, curr_true_leg], labels)
+    plt.title("Real World",fontdict={'fontsize': 18, 'fontweight': 'medium'})
+    plt.imshow(images[1])
+    plt.plot([500],[500],'x')
+
+    for i in range(len(true_locations_prime)):
+        if(i != 0):
+            rectangle_image.remove()
+            rectangle_search.remove()
+        curr_est_leg.remove()
+        curr_true_leg.remove()
+
+        # uav image rectangle creating
+        col_image= max(est_locations[i][1]-height[1]/2,0)
+        col_size_image = est_locations[i][1] - col_image + min(height[1]/2,images[0].shape[1] - est_locations[i][1])
+        row_image = max(est_locations[i][0]-height[0]/2,0)
+        row_size_image = est_locations[i][0] - row_image + min(height[0]/2,images[0].shape[0] - est_locations[i][0])
+        rectangle_image = plt.Rectangle((col_image, row_image), col_size_image, row_size_image, fill=None,ec="yellow")
+
+        # searching area rectangle creating
+        col_search= max(est_locations[i][1]-searching_area_ratio*height[1]/2,0)
+        col_size_search = est_locations[i][1] - col_search + min(searching_area_ratio*height[1]/2,images[0].shape[1] - est_locations[i][1])
+        row_search = max(est_locations[i][0]-searching_area_ratio*height[0]/2,0)
+        row_size_search = est_locations[i][0] - row_search + min(searching_area_ratio*height[0]/2,images[0].shape[0] - est_locations[i][0])
+        rectangle_search = plt.Rectangle((col_search, row_search), col_size_search, row_size_search, fill=None,ec="blue")
+
+        plt.subplot(1,2,1)
+        plt.gca().add_patch(rectangle_search)
+        plt.scatter(est_locations[:i+1, 1], est_locations[:i+1, 0], marker=".", color="blue", s=50)
+        curr_est_leg = plt.scatter(est_locations[i, 1], est_locations[i, 0], marker="x", color="blue", s=70)
+        plt.subplot(1,2,2)
+        plt.gca().add_patch(rectangle_image)
+        plt.scatter(true_locations_prime[:i+1, 1], true_locations_prime[:i+1, 0], marker=".", color="yellow", s=50)
+        curr_true_leg = plt.scatter(true_locations_prime[i, 1], true_locations_prime[i, 0], marker="x", color="yellow", s=50)
+        plt.pause(0.2)
 
 
 
@@ -171,7 +182,7 @@ for i in range(len(true_locations_prime)):
 # plot true points and estimated points.
 fig1 = plt.figure(1)
 plt.imshow(images[0])
-plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="red", s=50)
+plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="yellow", s=50)
 plt.scatter(est_locations[:, 1], est_locations[:, 0], marker=".", color="blue", s=50)
 
 dists = []
@@ -191,6 +202,10 @@ text = ("Avg Err = " + str(avg_err) + '\t' +
 
 plt.title(text)
 
+# plot directions diff
+fig3 = plt.figure(3)
+plt.plot(true_directions,'bo')
+plt.title("Angles of true directions")
 
 ##############################
 # Save figures and statistics.
