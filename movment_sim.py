@@ -14,22 +14,21 @@ import uav_control
 # %% parameters
 
 resize_ratio = 2
-searching_area_ratio = 2
+searching_area_ratio = 1
 height = (int(500 / resize_ratio), int(500 / resize_ratio))
 rotate = False
 step_ratio = 4
-max_step = np.round(np.array(height) / step_ratio).astype(int)
 save = False
-animation = True
-base_velocity = 20  # pixels per sec
+animation = False
+base_velocity = int(40 / resize_ratio)  # pixels per sec
 frame_rate = 1  # 1 / sec
-dest_thresh = 40
-final_dest_thresh = 10
+dest_thresh = int(80 / resize_ratio)
+final_dest_thresh = int(20 / resize_ratio)
 slow_area_ratio = 3
 wind_hist_len = 20
-wind_direction = np.pi
-wind_max_strength = 15
-noise = 0.75
+wind_direction = 0.25 * np.pi
+wind_max_strength = int(30 / resize_ratio)
+noise = 0.5
 
 
 # %% configuration
@@ -55,9 +54,11 @@ for i, im in enumerate(images):
 #############################
 # %% generate path points.
 #############################
-N = 3
+N = 6
 # uav_path = sim_func.getPoints(images[0], N)
-uav_path = np.array([[597, 390], [444, 390], [335, 323]])
+# uav_path = (np.array([[1040, 1298], [854, 1258], [664, 1128]]) / resize_ratio).astype(int)
+uav_path = (np.array([[1100, 1138], [1222, 1346], [912, 1302], [834, 1222], [716, 1218], [598, 1042]]) / resize_ratio).astype(int)
+
 # first_coo = sim_func.getPoints(images[0], 1).squeeze()
 first_coo = np.array([477, 478])
 # true_points = sim_func.generate_true_points(first_coo, images[0].shape, uav_image_size, N, 'RD', step_ratio)
@@ -186,6 +187,7 @@ plt.imshow(images[0])
 plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="yellow", s=50)
 plt.scatter(est_locations[:, 1], est_locations[:, 0], marker=".", color="blue", s=50)
 
+
 dists = []
 for i in range(len(est_locations)):
     dists.append(sim_func.calc_distance(est_locations[i], true_locations[i]))
@@ -193,15 +195,17 @@ avg_err = int(sum(dists)/len(dists))
 # plot distances
 fig2 = plt.figure(2)
 plt.plot(dists, 'bo')
+plt.xticks(range(0, len(true_locations)))
 text = ("Avg Err = " + str(avg_err) + '\t' +
         "UAV picture size = " + str(height) + '\t' +
         "Search area ratio = " + str(searching_area_ratio) + '\t' +
         "Rotate = " + str(rotate) + '\t' +
         "reduced resolution by " + str(resize_ratio) + '\t' +
-        "step_ratio = " + str(step_ratio) + "\t" +
-        "max step size = " + str(int(sim_func.calc_distance(max_step, (0, 0)))))
+        "step_ratio = " + str(step_ratio) + "\t")
 
 plt.title(text)
+plt.xlabel("step number")
+plt.ylabel("Error [pixels]")
 
 # plot directions diff
 fig3 = plt.figure(3)

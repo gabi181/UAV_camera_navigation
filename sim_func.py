@@ -176,7 +176,7 @@ def affinic_from_2020_to_2018(point_2020):
 
 def small_rand_rotate(im, seed=1):
     random.seed(seed)
-    angle = random.randint(0, 5)
+    angle = random.randint(0, 180)
     im = rotate_image.rotate(im, angle)
     return im
 
