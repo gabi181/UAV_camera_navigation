@@ -19,16 +19,16 @@ height = (int(500 / resize_ratio), int(500 / resize_ratio))
 rotate = False
 step_ratio = 4
 save = False
-animation = False
+animation = True
 base_velocity = int(40 / resize_ratio)  # pixels per sec
 frame_rate = 1  # 1 / sec
 dest_thresh = int(80 / resize_ratio)
 final_dest_thresh = int(20 / resize_ratio)
 slow_area_ratio = 3
-wind_hist_len = 20
-wind_direction = 0.25 * np.pi
-wind_max_strength = int(30 / resize_ratio)
-noise = 0.5
+wind_hist_len = 30
+wind_direction = 0
+wind_max_strength = int(20 / resize_ratio)
+noise = 0
 
 
 # %% configuration
@@ -54,10 +54,10 @@ for i, im in enumerate(images):
 #############################
 # %% generate path points.
 #############################
-N = 6
+N = 3
 # uav_path = sim_func.getPoints(images[0], N)
-# uav_path = (np.array([[1040, 1298], [854, 1258], [664, 1128]]) / resize_ratio).astype(int)
-uav_path = (np.array([[1100, 1138], [1222, 1346], [912, 1302], [834, 1222], [716, 1218], [598, 1042]]) / resize_ratio).astype(int)
+uav_path = (np.array([[576, 886], [858, 766], [1222, 782]]) / resize_ratio).astype(int)
+
 
 # first_coo = sim_func.getPoints(images[0], 1).squeeze()
 first_coo = np.array([477, 478])
@@ -186,6 +186,7 @@ fig1 = plt.figure(1)
 plt.imshow(images[0])
 plt.scatter(true_locations[:, 1], true_locations[:, 0], marker=".", color="yellow", s=50)
 plt.scatter(est_locations[:, 1], est_locations[:, 0], marker=".", color="blue", s=50)
+plt.legend(['true locations', 'estimated location'])
 
 
 dists = []
