@@ -1,9 +1,5 @@
 import numpy as np
 import cv2 as cv
-import matplotlib.pyplot as plt
-from skimage.feature import hog
-import random
-import rotate_image
 
 
 def cart2pol(row_col):
@@ -56,136 +52,6 @@ def center2im(center_cor, image, im_shape):
     return im
 
 
-def calc_im_diff(image, mid_image, step_size=17, hist_alg=1, hist_col=40, hist_list_len=1, mean_hist=1,max_color_alg=0,max_span=5,hog_alg=0):
-    image_len = len(image)
-    image_width = len(image[0])
-    mid_image_len = len(mid_image)
-    mid_image_width = len(mid_image[0])
-    x_list = np.zeros(hist_list_len)
-    y_list = np.zeros(hist_list_len)
-    dist_list = np.zeros(hist_list_len)
-    x_min = 0
-    y_min = 0
-    dist_min = 1000000000000000
-    for num in range(len(dist_list)):
-        dist_list[num] = dist_min
-
-    if (hog_alg):
-        image_grey = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-        mid_image_grey = cv.cvtColor(mid_image, cv.COLOR_BGR2GRAY)
-        fd, image_grey = hog(image_grey, orientations=12, pixels_per_cell=(2, 2),
-                                cells_per_block=(8, 8), visualize=True, multichannel=False)
-        fd, mid_image_grey = hog(mid_image_grey, orientations=12, pixels_per_cell=(2, 2),
-                                cells_per_block=(8, 8), visualize=True, multichannel=False)
-        image = image_grey[1::2, 1::2]
-        mid_image = mid_image_grey[1::2, 1::2]
-        image_len = len(image)
-        image_width = len(image[0])
-        mid_image_len = len(mid_image)
-        mid_image_width = len(mid_image[0])
-        plt.figure(2)
-        plt.imshow(mid_image)
-        plt.figure(3)
-        plt.imshow(image)
-        plt.show()
-
-    i_diff = 0
-    j_diff = 0
-    diff_mat = np.zeros([len(range(0,mid_image_len-image_len , step_size)),len(range(0, mid_image_width - image_width, step_size))])
-
-    if (hist_alg):
-        image_r = np.histogram(image[:, :, 0], hist_col)
-        image_g = np.histogram(image[:, :, 1], hist_col)
-        image_b = np.histogram(image[:, :, 2], hist_col)
-        print("elyakim" + str(image_r[0]))
-        #mean_r = np.mean(image_r[0])
-        #mean_g = np.mean(image_g[0])
-        #mean_b = np.mean(image_b[0])
-        mean_r = np.mean(image[:, :, 0])
-        mean_g = np.mean(image[:, :, 1])
-        mean_b = np.mean(image[:, :, 2])
-        image_hist = [image_r[0], image_g[0], image_b[0]]
-    for i in range(0,mid_image_len-image_len , step_size):
-        for j in range(0, mid_image_width - image_width, step_size):
-            image_to_compare = mid_image[i:i + image_len, j:j + image_width]
-            if (mean_hist):
-                mean_r_to_compere = np.mean(image_to_compare[:,:,0])
-                mean_g_to_compere = np.mean(image_to_compare[:,:,1])
-                mean_b_to_compere = np.mean(image_to_compare[:,:,2])
-                image_to_compare_r = image_to_compare[:, :, 0] + (-mean_r_to_compere + mean_r)
-                image_to_compare_g = image_to_compare[:, :, 1] + (-mean_g_to_compere + mean_g)
-                image_to_compare_b = image_to_compare[:, :, 2] + (-mean_b_to_compere + mean_b)
-            if (hist_alg):
-                image_to_compare_r = np.histogram(image_to_compare[:,:,0], hist_col)
-                image_to_compare_g = np.histogram(image_to_compare[:,:,1], hist_col)
-                image_to_compare_b = np.histogram(image_to_compare[:,:,2], hist_col)
-
-                #mean_r_to_compere = np.mean(image_to_compare_r[0])
-                #mean_g_to_compere = np.mean(image_to_compare_g[0])
-                #mean_b_to_compere = np.mean(image_to_compare_b[0])
-                #if (mean_hist):
-                #    image_to_compare_r = image_to_compare_r - mean_r_to_compere + mean_r
-                #    image_to_compare_g = image_to_compare_g - mean_g_to_compere + mean_g
-                #    image_to_compare_b = image_to_compare_b - mean_b_to_compere + mean_b
-                image_to_compare_hist = [image_to_compare_r[0], image_to_compare_g[0], image_to_compare_b[0]]
-                if (max_color_alg):
-                    image_r_ind = np.argmax(image_hist[0])
-                    image_g_ind = np.argmax(image_hist[1])
-                    image_b_ind = np.argmax(image_hist[2])
-                    image_to_compare_r_ind = np.argmax(image_to_compare_hist[0])
-                    image_to_compare_g_ind = np.argmax(image_to_compare_hist[1])
-                    image_to_compare_b_ind = np.argmax(image_to_compare_hist[2])
-                    dist = (np.sum((image_hist[0][image_r_ind-max_span:image_r_ind+max_span] - image_to_compare_hist[0][image_to_compare_r_ind-max_span:image_to_compare_r_ind+max_span]) ** 2) + np.sum(
-                        (image_hist[1][image_g_ind-max_span:image_g_ind+max_span] - image_to_compare_hist[1][image_to_compare_g_ind-max_span:image_to_compare_g_ind+max_span]) ** 2) + np.sum(
-                        (image_hist[2][image_b_ind-max_span:image_b_ind+max_span] - image_to_compare_hist[2][image_to_compare_b_ind-max_span:image_to_compare_b_ind+max_span]) ** 2)) / (3 * image_len * image_width * 256)
-                else:
-                    dist = (np.sum((image_hist[0] - image_to_compare_hist[0]) ** 2) + np.sum(
-                        (image_hist[1] - image_to_compare_hist[1]) ** 2) + np.sum(
-                        (image_hist[2] - image_to_compare_hist[2]) ** 2)) / (3 * image_len * image_width * 256)
-                if (dist < dist_min):
-                    x_list[np.argmax(dist_list)] = int(i)
-                    y_list[np.argmax(dist_list)] = int(j)
-                    dist_list[np.argmax(dist_list)] = dist
-                    dist_min = np.max(dist_list)
-            else:
-                dist = (np.sum((image - image_to_compare) ** 2))  # /(image_size**2*256)
-                if (dist < dist_min):
-                    dist_min = dist
-                    x_min = i
-                    y_min = j
-
-            diff_mat[i_diff][j_diff] = -dist
-            j_diff += 1
-        j_diff = 0
-        i_diff += 1
-
-
-    i = 0
-    j = 0
-    print(x_list)
-    print(y_list)
-    print(dist_list)
-    if (hist_alg):
-        dist_min = 10000000000000000
-        for ind in range(len(x_list)):
-            i = int(x_list[ind])
-            j = int(y_list[ind])
-            if(len(x_list)==1):
-                x_min = i
-                y_min = j
-                return x_min, y_min, diff_mat
-            image_to_compare = mid_image[i:i + image_len, j:j + image_width]
-            dist = (np.sum((image - image_to_compare) ** 2)) / (image_len * image_width * 256)
-            if (dist < dist_min):
-                dist_min = dist
-                x_min = i
-                y_min = j
-
-    #if (not same_year):
-    #    x_min = x_min + 35
-    #    y_min = y_min + 50
-
-    return x_min, y_min, diff_mat
 
 
 def match_with_sift(med_im,small_im):
@@ -227,6 +93,7 @@ def match_with_sift(med_im,small_im):
     p = np.concatenate((np.flip(np.round(np.array([small_im.shape[0:2]])/2).astype(int)).T, np.ones((1, 1), int)))
     uav_cor = np.round(np.flip((H @ p).T)).astype(int).squeeze()
     """
+    For debug
     fig, ax = plt.subplots(2, 1)
     ax[0].imshow(med_im)
     ax[1].imshow(small_im)

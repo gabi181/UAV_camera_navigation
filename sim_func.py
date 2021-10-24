@@ -6,6 +6,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+def getPoints(im, N):
+    plt.figure()
+    plt.imshow(im)
+    pts = np.round(np.array(plt.ginput(N, timeout=120))).astype(int)
+    pts = np.flip(pts, axis=1)
+    plt.close()
+    return pts
+
+
+def calc_distance(p1, p2):
+    return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)  # Pythagorean theorem
+
+
+def transform_pts(p, H):
+    p_hetro = np.expand_dims(np.insert(np.flip(p), 2, 1), axis=1)
+    p_prime = np.squeeze(np.round(np.flip((H @ p_hetro).T)).astype(int))
+    return p_prime
+
 
 def create_images(im,im_18,med_im_width = 1000, med_im_height = 1000):
     small_im_width = 120
@@ -102,21 +120,6 @@ def generate_mid_image(image_2018_large,image_2020_large,mid_image_len,mid_image
             median_2020 = np.median(image_2020)
 
         return image_2020,image_2018
-    #if (hog_alg):
-    #    fd, hog_road_2020 = hog(road_2020, orientations=12, pixels_per_cell=(8, 8),
-    #                        cells_per_block=(8, 8), visualize=True, multichannel=True)
-    #    road_2020 = np.array(hog_road_2020)
-    #    fd, hog_road_2018 = hog(road_2018, orientations=12, pixels_per_cell=(8, 8),
-    #                        cells_per_block=(8, 8), visualize=True, multichannel=True)
-    #    road_2018 = np.array(hog_road_2018)
-    #elif (grey_alg):
-    #    road_2020 = cv.cvtColor(road_2020, cv.COLOR_BGR2GRAY)
-    #    road_2018 = cv.cvtColor(road_2018, cv.COLOR_BGR2GRAY)
-    #    if (thresh_alg):
-    #        road_2020[road_2020>127] = 255
-    #        road_2020[road_2020<=127] = 0
-    #        road_2018[road_2018>127] = 255
-    #        road_2018[road_2018<=127] = 0
 
 
 def generate_uvm_image(mid_image,image_len,image_width,rotate_im=1,road_alg=0,ulman_alg=0):
@@ -220,20 +223,4 @@ def generate_true_points(initial_p, im_shape, uav_im_shape, N, general_direction
     return pts
 
 
-def getPoints(im, N):
-    plt.figure()
-    plt.imshow(im)
-    pts = np.round(np.array(plt.ginput(N, timeout=120))).astype(int)
-    pts = np.flip(pts, axis=1)
-    plt.close()
-    return pts
 
-
-def calc_distance(p1, p2):
-    return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)  # Pythagorean theorem
-
-
-def transform_pts(p, H):
-    p_hetro = np.expand_dims(np.insert(np.flip(p), 2, 1), axis=1)
-    p_prime = np.squeeze(np.round(np.flip((H @ p_hetro).T)).astype(int))
-    return p_prime
