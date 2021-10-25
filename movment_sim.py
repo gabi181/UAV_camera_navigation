@@ -53,8 +53,8 @@ for i, im in enumerate(images):
 #############################
 # %% generate path points.
 #############################
-N = 3
-# uav_path = sim_func.getPoints(images[0], N)
+N = 5
+uav_path = sim_func.getPoints(images[0], N)
 uav_path = (np.array([[576, 886], [858, 766], [1222, 782]]) / resize_ratio).astype(int)
 
 
